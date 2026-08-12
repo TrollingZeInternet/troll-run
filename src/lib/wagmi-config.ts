@@ -88,8 +88,11 @@ function createConnectors() {
 }
 
 export function createWagmiConfig(viemChains: Chain[]): Config {
+  const evmChains = viemChains.filter(
+    (chain): chain is Chain => Boolean(chain && typeof chain.id === "number"),
+  );
   const chains = (
-    viemChains.length > 0 ? viemChains : [mainnet]
+    evmChains.length > 0 ? evmChains : [mainnet]
   ) as [Chain, ...Chain[]];
 
   return createConfig({

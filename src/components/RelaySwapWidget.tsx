@@ -3,7 +3,7 @@
 import { SwapWidget, type Token } from "@relayprotocol/relay-kit-ui";
 import { adaptSolanaWallet } from "@relayprotocol/relay-svm-wallet-adapter";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import ClientOnly from "./ClientOnly";
 import RelayProviders from "./RelayProviders";
 import WalletStatusBar from "./WalletStatusBar";
@@ -27,8 +27,10 @@ function WidgetSkeleton() {
   );
 }
 
+/** Destination token is locked — ignore widget callbacks to avoid parent re-renders during selection. */
+function lockedSetToToken(_token?: Token) {}
+
 function RelaySwapWidgetInner() {
-  const [toToken, setToToken] = useState(TROLL_TOKEN);
   const { connection } = useConnection();
   const { publicKey, wallet: solanaWallet, connected: isSolanaConnected } =
     useWallet();
@@ -76,17 +78,20 @@ function RelaySwapWidgetInner() {
   const isSolanaWalletBootstrapping =
     primaryVmType === "svm" && isSolanaConnected && !solanaAdaptedWallet;
 
-  const widgetResetKey = [
-    primaryAddress ?? "disconnected",
-    primaryVmType ?? "none",
-    linkedWallets.map((wallet) => wallet.address).join("|"),
-  ].join(":");
+  const handleSetPrimaryWallet = useCallback(
+    (address: string) => {
+      queueMicrotask(() => setPrimaryAddress(address));
+    },
+    [setPrimaryAddress],
+  );
 
-  const handleSetToToken = (token?: Token) => {
-    if (token) {
-      setToToken(token);
-    }
-  };
+  const handleOpenConnectModal = useCallback(() => {
+    openConnectModal();
+  }, [openConnectModal]);
+
+  const handleSwapError = useCallback((error: string) => {
+    console.error("Relay swap widget error:", error);
+  }, []);
 
   if (isSolanaWalletBootstrapping) {
     return <WidgetSkeleton />;
@@ -97,22 +102,23 @@ function RelaySwapWidgetInner() {
       <WalletStatusBar
         linkedWallets={linkedWallets}
         primaryAddress={primaryAddress}
-        onOpenWalletModal={() => openConnectModal()}
+        onOpenWalletModal={handleOpenConnectModal}
         onDisconnectAll={disconnectAllWallets}
       />
-      <WidgetErrorBoundary resetKey={widgetResetKey}>
+      <WidgetErrorBoundary>
         <SwapWidget
           wallet={activeWallet}
-          toToken={toToken}
-          setToToken={handleSetToToken}
+          toToken={TROLL_TOKEN}
+          setToToken={lockedSetToToken}
           lockToToken
           lockChainId={ETHEREUM_CHAIN_ID}
           multiWalletSupportEnabled
           linkedWallets={linkedWallets}
           supportedWalletVMs={["evm", "svm"]}
-          onConnectWallet={() => openConnectModal()}
+          onConnectWallet={handleOpenConnectModal}
           onLinkNewWallet={linkWallet}
-          onSetPrimaryWallet={setPrimaryAddress}
+          onSetPrimaryWallet={handleSetPrimaryWallet}
+          onSwapError={handleSwapError}
           popularChainIds={[
             SOLANA_CHAIN_ID,
             1,

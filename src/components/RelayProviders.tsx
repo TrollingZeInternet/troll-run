@@ -30,10 +30,14 @@ function RelayWagmiBridge({ children }: { children: ReactNode }) {
   useEffect(() => initEip6963Discovery(), []);
 
   useEffect(() => {
-    if (!wagmiConfig && viemChains && viemChains.length > 0) {
-      setWagmiConfig(createWagmiConfig(viemChains));
+    if (!wagmiConfig && viemChains && viemChains.length > 0 && chains) {
+      const evmViemChains = chains
+        .filter((chain) => chain.vmType === "evm" && chain.viemChain)
+        .map((chain) => chain.viemChain);
+
+      setWagmiConfig(createWagmiConfig(evmViemChains));
     }
-  }, [viemChains, wagmiConfig]);
+  }, [chains, viemChains, wagmiConfig]);
 
   if (!wagmiConfig || !chains) {
     return <BridgeLoadingSkeleton />;
