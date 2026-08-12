@@ -1,17 +1,23 @@
+import type { EIP1193Provider } from "viem";
+import {
+  EIP6963_RDNS,
+  getEip6963Provider,
+  hasEip6963Provider,
+} from "./eip6963";
 import type { EvmWalletId } from "./wagmi-config";
 
-type Eip1193Provider = {
-  request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  isMetaMask?: boolean;
-  isRabby?: boolean;
-  isCoinbaseWallet?: boolean;
-  providers?: Eip1193Provider[];
-};
-
 type BrowserWindow = Window & {
-  ethereum?: Eip1193Provider;
-  rabby?: Eip1193Provider;
-  coinbaseWalletExtension?: Eip1193Provider;
+  ethereum?: EIP1193Provider & {
+    isMetaMask?: boolean;
+    isRabby?: boolean;
+    isCoinbaseWallet?: boolean;
+    isTrust?: boolean;
+    isTrustWallet?: boolean;
+    providers?: EIP1193Provider[];
+  };
+  rabby?: EIP1193Provider;
+  coinbaseWalletExtension?: EIP1193Provider;
+  trustwallet?: EIP1193Provider;
   phantom?: {
     solana?: {
       isPhantom?: boolean;
@@ -31,8 +37,8 @@ function getBrowserWindow(): BrowserWindow | undefined {
 }
 
 function findEthereumProvider(
-  predicate: (provider: Eip1193Provider) => boolean,
-): Eip1193Provider | undefined {
+  predicate: (provider: EIP1193Provider & Record<string, unknown>) => boolean,
+): EIP1193Provider | undefined {
   const browserWindow = getBrowserWindow();
   const ethereum = browserWindow?.ethereum;
 
@@ -47,28 +53,68 @@ function findEthereumProvider(
   return predicate(ethereum) ? ethereum : undefined;
 }
 
-export function getMetaMaskProvider(): Eip1193Provider | undefined {
-  return findEthereumProvider((provider) => {
-    if (!provider.isMetaMask) {
-      return false;
-    }
+function isMetaMaskProvider(
+  provider: EIP1193Provider & Record<string, unknown>,
+): boolean {
+  if (!provider.isMetaMask) {
+    return false;
+  }
 
-    const impersonators = [
-      "isRabby",
-      "isBraveWallet",
-      "isPhantom",
-      "isCoinbaseWallet",
-    ] as const;
+  if (provider.isTrust || provider.isTrustWallet) {
+    return false;
+  }
 
-    return !impersonators.some((flag) =>
-      Boolean((provider as Record<string, unknown>)[flag]),
-    );
-  });
+  const impersonators = [
+    "isRabby",
+    "isBraveWallet",
+    "isPhantom",
+    "isCoinbaseWallet",
+    "isTrust",
+    "isTrustWallet",
+  ] as const;
+
+  return !impersonators.some((flag) =>
+    Boolean((provider as Record<string, unknown>)[flag]),
+  );
+}
+
+export function getMetaMaskProvider(): EIP1193Provider | undefined {
+  const fromEip6963 = getEip6963Provider(EIP6963_RDNS.metaMask);
+
+  if (fromEip6963) {
+    return fromEip6963;
+  }
+
+  return findEthereumProvider(isMetaMaskProvider);
+}
+
+export function getTrustWalletProvider(): EIP1193Provider | undefined {
+  const fromEip6963 = getEip6963Provider(EIP6963_RDNS.trustWallet);
+
+  if (fromEip6963) {
+    return fromEip6963;
+  }
+
+  const browserWindow = getBrowserWindow();
+
+  if (browserWindow?.trustwallet) {
+    return browserWindow.trustwallet;
+  }
+
+  return findEthereumProvider(
+    (provider) => Boolean(provider.isTrust || provider.isTrustWallet),
+  );
 }
 
 export function getRabbyProviderFromWindow(
   browserWindow?: BrowserWindow,
-): Eip1193Provider | undefined {
+): EIP1193Provider | undefined {
+  const fromEip6963 = getEip6963Provider(EIP6963_RDNS.rabby);
+
+  if (fromEip6963) {
+    return fromEip6963;
+  }
+
   const win = browserWindow ?? getBrowserWindow();
 
   if (!win) {
@@ -90,15 +136,21 @@ export function getRabbyProviderFromWindow(
   }
 
   return ethereum.providers?.find(
-    (provider: Eip1193Provider) => provider.isRabby,
+    (provider: EIP1193Provider & { isRabby?: boolean }) => provider.isRabby,
   );
 }
 
-export function getRabbyProvider(): Eip1193Provider | undefined {
+export function getRabbyProvider(): EIP1193Provider | undefined {
   return getRabbyProviderFromWindow();
 }
 
-export function getCoinbaseEvmProvider(): Eip1193Provider | undefined {
+export function getCoinbaseEvmProvider(): EIP1193Provider | undefined {
+  const fromEip6963 = getEip6963Provider(EIP6963_RDNS.coinbaseWallet);
+
+  if (fromEip6963) {
+    return fromEip6963;
+  }
+
   const browserWindow = getBrowserWindow();
 
   if (browserWindow?.coinbaseWalletExtension) {
@@ -115,11 +167,25 @@ export function isEvmWalletInstalled(walletId: EvmWalletId): boolean {
 
   switch (walletId) {
     case "metaMask":
-      return Boolean(getMetaMaskProvider());
+      return (
+        hasEip6963Provider(EIP6963_RDNS.metaMask) ||
+        Boolean(getMetaMaskProvider())
+      );
+    case "trustWallet":
+      return (
+        hasEip6963Provider(EIP6963_RDNS.trustWallet) ||
+        Boolean(getTrustWalletProvider())
+      );
     case "rabby":
-      return Boolean(getRabbyProvider());
+      return (
+        hasEip6963Provider(EIP6963_RDNS.rabby) ||
+        Boolean(getRabbyProvider())
+      );
     case "coinbaseWallet":
-      return Boolean(getCoinbaseEvmProvider());
+      return (
+        hasEip6963Provider(EIP6963_RDNS.coinbaseWallet) ||
+        Boolean(getCoinbaseEvmProvider())
+      );
     default:
       return false;
   }
@@ -129,6 +195,8 @@ export function getEvmWalletInstallUrl(walletId: EvmWalletId): string | null {
   switch (walletId) {
     case "metaMask":
       return "https://metamask.io/download/";
+    case "trustWallet":
+      return "https://trustwallet.com/download";
     case "rabby":
       return "https://rabby.io/";
     case "coinbaseWallet":

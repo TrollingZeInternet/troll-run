@@ -196,11 +196,17 @@ export default function WalletConnectProvider({
         }
 
         await connectAsync({ connector: selectedConnector });
+
+        if (!pendingLink.current) {
+          window.setTimeout(() => {
+            setModalOpen(false);
+            setConnectError(null);
+          }, 0);
+        }
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "EVM wallet connection failed.";
         setConnectError(message);
-        throw error;
       }
     },
     [
@@ -223,13 +229,19 @@ export default function WalletConnectProvider({
           select,
           solanaWallet,
         );
+
+        if (!pendingLink.current) {
+          window.setTimeout(() => {
+            setModalOpen(false);
+            setConnectError(null);
+          }, 0);
+        }
       } catch (error) {
         const message =
           error instanceof Error
             ? error.message
             : "Solana wallet connection failed.";
         setConnectError(message);
-        throw error;
       }
     },
     [select, solanaWallet, wallets],

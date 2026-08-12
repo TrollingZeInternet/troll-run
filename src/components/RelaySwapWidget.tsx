@@ -5,9 +5,10 @@ import { adaptViemWallet } from "@relayprotocol/relay-sdk";
 import { adaptSolanaWallet } from "@relayprotocol/relay-svm-wallet-adapter";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useMemo, useState } from "react";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import ClientOnly from "./ClientOnly";
 import RelayProviders from "./RelayProviders";
+import WidgetErrorBoundary from "./WidgetErrorBoundary";
 import { useWalletConnect } from "./WalletConnectProvider";
 import {
   ETHEREUM_CHAIN_ID,
@@ -28,7 +29,9 @@ function WidgetSkeleton() {
 
 function RelaySwapWidgetInner() {
   const [toToken, setToToken] = useState(TROLL_TOKEN);
-  const { data: walletClient } = useWalletClient();
+  const { address, isConnected: isEvmConnected } = useAccount();
+  const { data: walletClient, isLoading: isWalletClientLoading } =
+    useWalletClient();
   const { connection } = useConnection();
   const { publicKey, wallet: solanaWallet } = useWallet();
   const {
@@ -38,35 +41,50 @@ function RelaySwapWidgetInner() {
     setPrimaryAddress,
   } = useWalletConnect();
 
-  const evmWallet = useMemo(
-    () => (walletClient ? adaptViemWallet(walletClient) : undefined),
-    [walletClient],
-  );
+  const evmWallet = useMemo(() => {
+    if (!walletClient) {
+      return undefined;
+    }
+
+    try {
+      return adaptViemWallet(walletClient, {
+        disableCapabilitiesCheck: true,
+      });
+    } catch {
+      return undefined;
+    }
+  }, [walletClient]);
 
   const solanaAdaptedWallet = useMemo(() => {
     if (!publicKey || !solanaWallet?.adapter) {
       return undefined;
     }
 
-    const address = publicKey.toBase58();
+    const walletAddress = publicKey.toBase58();
     const adapter = solanaWallet.adapter;
 
-    return adaptSolanaWallet(
-      address,
-      SOLANA_CHAIN_ID,
-      connection,
-      async (transaction, options) => {
-        const signature = await adapter.sendTransaction(
-          transaction,
-          connection,
-          options,
-        );
-        return { signature };
-      },
-    );
+    try {
+      return adaptSolanaWallet(
+        walletAddress,
+        SOLANA_CHAIN_ID,
+        connection,
+        async (transaction, options) => {
+          const signature = await adapter.sendTransaction(
+            transaction,
+            connection,
+            options,
+          );
+          return { signature };
+        },
+      );
+    } catch {
+      return undefined;
+    }
   }, [connection, publicKey, solanaWallet?.adapter]);
 
-  const wallet = evmWallet ?? solanaAdaptedWallet;
+  const wallet = isEvmConnected ? evmWallet : solanaAdaptedWallet;
+  const isWalletBootstrapping =
+    isEvmConnected && (isWalletClientLoading || !evmWallet);
 
   const handleSetToToken = (token?: Token) => {
     if (token) {
@@ -74,8 +92,13 @@ function RelaySwapWidgetInner() {
     }
   };
 
+  if (isWalletBootstrapping) {
+    return <WidgetSkeleton />;
+  }
+
   return (
     <SwapWidget
+      key={address ?? publicKey?.toBase58() ?? "disconnected"}
       wallet={wallet}
       toToken={toToken}
       setToToken={handleSetToToken}
@@ -104,7 +127,9 @@ export default function RelaySwapWidget() {
   return (
     <ClientOnly fallback={<WidgetSkeleton />}>
       <RelayProviders>
-        <RelaySwapWidgetInner />
+        <WidgetErrorBoundary>
+          <RelaySwapWidgetInner />
+        </WidgetErrorBoundary>
       </RelayProviders>
     </ClientOnly>
   );

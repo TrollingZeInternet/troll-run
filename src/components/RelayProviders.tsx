@@ -6,14 +6,28 @@ import { MAINNET_RELAY_API } from "@relayprotocol/relay-sdk";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { WagmiProvider, type Config } from "wagmi";
+import { initEip6963Discovery } from "@/lib/eip6963";
 import { relayKitTheme } from "@/lib/relay-config";
 import { createWagmiConfig } from "@/lib/wagmi-config";
 import SolanaWalletProvider from "./SolanaWalletProvider";
 import WalletConnectProvider from "./WalletConnectProvider";
 
+function BridgeLoadingSkeleton() {
+  return (
+    <div className="animate-pulse space-y-4 p-4">
+      <div className="h-24 rounded-2xl bg-white/5" />
+      <div className="mx-auto h-10 w-10 rounded-full bg-white/5" />
+      <div className="h-24 rounded-2xl bg-white/5" />
+      <div className="h-12 rounded-full bg-white/5" />
+    </div>
+  );
+}
+
 function RelayWagmiBridge({ children }: { children: ReactNode }) {
   const [wagmiConfig, setWagmiConfig] = useState<Config | null>(null);
   const { chains, viemChains } = useRelayChains(MAINNET_RELAY_API);
+
+  useEffect(() => initEip6963Discovery(), []);
 
   useEffect(() => {
     if (!wagmiConfig && viemChains && viemChains.length > 0) {
@@ -22,7 +36,7 @@ function RelayWagmiBridge({ children }: { children: ReactNode }) {
   }, [viemChains, wagmiConfig]);
 
   if (!wagmiConfig || !chains) {
-    return null;
+    return <BridgeLoadingSkeleton />;
   }
 
   return (
@@ -55,6 +69,7 @@ export default function RelayProviders({ children }: { children: ReactNode }) {
           queries: {
             staleTime: 60 * 1000,
             refetchOnWindowFocus: false,
+            retry: 1,
           },
         },
       }),
