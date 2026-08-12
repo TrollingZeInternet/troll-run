@@ -2,11 +2,18 @@
 
 import { SwapWidget, type Token } from "@relayprotocol/relay-kit-ui";
 import { adaptViemWallet } from "@relayprotocol/relay-sdk";
+import { adaptSolanaWallet } from "@relayprotocol/relay-svm-wallet-adapter";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useMemo, useState } from "react";
-import { useConnect, useWalletClient } from "wagmi";
+import { useWalletClient } from "wagmi";
 import ClientOnly from "./ClientOnly";
 import RelayProviders from "./RelayProviders";
-import { ETHEREUM_CHAIN_ID, TROLL_TOKEN } from "@/lib/relay-config";
+import { useWalletConnect } from "./WalletConnectProvider";
+import {
+  ETHEREUM_CHAIN_ID,
+  SOLANA_CHAIN_ID,
+  TROLL_TOKEN,
+} from "@/lib/relay-config";
 
 function WidgetSkeleton() {
   return (
@@ -22,21 +29,44 @@ function WidgetSkeleton() {
 function RelaySwapWidgetInner() {
   const [toToken, setToToken] = useState(TROLL_TOKEN);
   const { data: walletClient } = useWalletClient();
-  const { connect, connectors } = useConnect();
+  const { connection } = useConnection();
+  const { publicKey, wallet: solanaWallet } = useWallet();
+  const {
+    linkedWallets,
+    openConnectModal,
+    linkWallet,
+    setPrimaryAddress,
+  } = useWalletConnect();
 
-  const wallet = useMemo(
+  const evmWallet = useMemo(
     () => (walletClient ? adaptViemWallet(walletClient) : undefined),
     [walletClient],
   );
 
-  const onConnectWallet = () => {
-    const connector =
-      connectors.find((item) => item.id === "injected") ?? connectors[0];
-
-    if (connector) {
-      connect({ connector });
+  const solanaAdaptedWallet = useMemo(() => {
+    if (!publicKey || !solanaWallet?.adapter) {
+      return undefined;
     }
-  };
+
+    const address = publicKey.toBase58();
+    const adapter = solanaWallet.adapter;
+
+    return adaptSolanaWallet(
+      address,
+      SOLANA_CHAIN_ID,
+      connection,
+      async (transaction, options) => {
+        const signature = await adapter.sendTransaction(
+          transaction,
+          connection,
+          options,
+        );
+        return { signature };
+      },
+    );
+  }, [connection, publicKey, solanaWallet?.adapter]);
+
+  const wallet = evmWallet ?? solanaAdaptedWallet;
 
   const handleSetToToken = (token?: Token) => {
     if (token) {
@@ -51,9 +81,21 @@ function RelaySwapWidgetInner() {
       setToToken={handleSetToToken}
       lockToToken
       lockChainId={ETHEREUM_CHAIN_ID}
-      supportedWalletVMs={["evm"]}
-      onConnectWallet={onConnectWallet}
-      popularChainIds={[1, 8453, 42161, 10, 137, 56]}
+      multiWalletSupportEnabled
+      linkedWallets={linkedWallets}
+      supportedWalletVMs={["evm", "svm"]}
+      onConnectWallet={() => openConnectModal()}
+      onLinkNewWallet={linkWallet}
+      onSetPrimaryWallet={setPrimaryAddress}
+      popularChainIds={[
+        SOLANA_CHAIN_ID,
+        1,
+        8453,
+        42161,
+        10,
+        137,
+        56,
+      ]}
     />
   );
 }

@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     "@relayprotocol/relay-kit-ui",
     "@relayprotocol/relay-kit-hooks",
     "@relayprotocol/relay-sdk",
+    "@relayprotocol/relay-svm-wallet-adapter",
     "@wagmi/connectors",
     "wagmi",
   ],

@@ -6,6 +6,11 @@ import {
 
 export const ETHEREUM_CHAIN_ID = 1;
 
+/** Relay chain ID for Solana mainnet */
+export const SOLANA_CHAIN_ID = 792703809;
+
+export const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
+
 export const WALLET_CONNECT_PROJECT_ID =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
   "5432e3507d41270bee46b7b85bbc2ef8";

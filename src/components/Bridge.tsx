@@ -62,7 +62,8 @@ export default function Bridge() {
                     Bridge with Relay
                   </h3>
                   <p className="text-xs text-zinc-500">
-                    Destination locked to $TROLL on Ethereum
+                    Bridge from Solana or any EVM chain — destination locked to
+                    $TROLL on Ethereum
                   </p>
                 </div>
               </div>
