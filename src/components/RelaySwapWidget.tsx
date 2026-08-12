@@ -11,6 +11,7 @@ import WidgetErrorBoundary from "./WidgetErrorBoundary";
 import { useWalletConnect } from "./WalletConnectProvider";
 import {
   ETHEREUM_CHAIN_ID,
+  RELAY_DEFAULT_SWAP_AMOUNT,
   SOLANA_CHAIN_ID,
   TROLL_TOKEN,
 } from "@/lib/relay-config";
@@ -110,6 +111,7 @@ function RelaySwapWidgetInner() {
           wallet={activeWallet}
           toToken={TROLL_TOKEN}
           setToToken={lockedSetToToken}
+          defaultAmount={RELAY_DEFAULT_SWAP_AMOUNT}
           lockToToken
           lockChainId={ETHEREUM_CHAIN_ID}
           multiWalletSupportEnabled

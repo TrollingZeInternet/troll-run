@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/patch-relay-swap-widget.mjs"
   },
   "dependencies": {
     "@relayprotocol/relay-kit-hooks": "^4.0.2",

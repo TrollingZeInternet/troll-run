@@ -15,6 +15,9 @@ export const WALLET_CONNECT_PROJECT_ID =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
   "5432e3507d41270bee46b7b85bbc2ef8";
 
+/** Default swap input amount — Relay calls parseUnits during render; empty string crashes. */
+export const RELAY_DEFAULT_SWAP_AMOUNT = "0";
+
 export const TROLL_TOKEN: Token = {
   chainId: ETHEREUM_CHAIN_ID,
   address: CONTRACT_ADDRESS,
