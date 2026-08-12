@@ -16,6 +16,7 @@ import { injected } from "@wagmi/connectors";
 import type { Config, CreateConnectorFn } from "wagmi";
 import { WagmiProvider } from "wagmi";
 import ClientOnly from "./ClientOnly";
+import Web3Providers from "./Web3Providers";
 import {
   createLifiWidgetConfig,
   getEthereumProviderConfig,
@@ -83,15 +84,17 @@ export default function LiFiBridgeWidget() {
 
   return (
     <ClientOnly fallback={<WidgetSkeleton config={skeletonConfig} />}>
-      <WagmiProvider config={wagmiSetup.config} reconnectOnMount={false}>
-        <WagmiChainSync
-          wagmiConfig={wagmiSetup.config}
-          connectors={wagmiSetup.connectors}
-          widgetConfig={widgetConfig}
-        >
-          <LiFiWidget integrator="troll.run" config={widgetConfig} />
-        </WagmiChainSync>
-      </WagmiProvider>
+      <Web3Providers>
+        <WagmiProvider config={wagmiSetup.config} reconnectOnMount={false}>
+          <WagmiChainSync
+            wagmiConfig={wagmiSetup.config}
+            connectors={wagmiSetup.connectors}
+            widgetConfig={widgetConfig}
+          >
+            <LiFiWidget integrator="troll.run" config={widgetConfig} />
+          </WagmiChainSync>
+        </WagmiProvider>
+      </Web3Providers>
     </ClientOnly>
   );
 }
