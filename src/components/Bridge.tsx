@@ -1,27 +1,17 @@
-import { ArrowRightLeft, CreditCard, Globe, Shield, ExternalLink } from "lucide-react";
+import {
+  ArrowRightLeft,
+  CreditCard,
+  ExternalLink,
+  Repeat,
+} from "lucide-react";
 import SectionHeading from "./SectionHeading";
 import GlassCard from "./GlassCard";
-import LiFiBridgeWidget from "./LiFiBridgeWidget";
+import RelaySwapWidget from "./RelaySwapWidget";
 import CopyContractAddress from "./CopyContractAddress";
-import { MOONPAY_BUY_ETH_URL } from "@/lib/constants";
-
-const features = [
-  {
-    icon: Globe,
-    title: "Any Chain",
-    description: "Bridge from Base, Arbitrum, Polygon, BSC, and more.",
-  },
-  {
-    icon: ArrowRightLeft,
-    title: "Any Token",
-    description: "Swap ETH, USDC, or other assets directly into TrollERC20.",
-  },
-  {
-    icon: Shield,
-    title: "Always $TROLL",
-    description: "Destination is locked to TrollERC20 on Ethereum mainnet.",
-  },
-];
+import {
+  MOONPAY_BUY_ETH_URL,
+  UNISWAP_SWAP_URL,
+} from "@/lib/constants";
 
 export default function Bridge() {
   return (
@@ -32,113 +22,95 @@ export default function Bridge() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <SectionHeading
           label="Buy & Bridge"
-          title="Bridge to TrollERC20"
-          description="New to crypto? Buy ETH with your card first, then swap or bridge into TrollERC20 ($TROLL) on Ethereum — powered by MoonPay and LI.FI."
+          title="Get TrollERC20 ($TROLL)"
+          description="Three ways to buy $TROLL on Ethereum — pay with card, bridge from any chain, or swap directly on Uniswap."
         />
 
-        <GlassCard className="glass-card-green mb-10 !p-6 md:!p-8" hover={false}>
-          <div className="grid gap-8 md:grid-cols-2 md:gap-10">
-            <div>
-              <div className="mb-3 flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-troll-green text-sm font-black text-black">
-                  1
-                </span>
-                <h3 className="text-lg font-black text-white">
-                  Buy ETH with Card
-                </h3>
-              </div>
-              <p className="mb-6 text-sm leading-relaxed text-zinc-400">
-                Use MoonPay to purchase ETH with credit card, debit card, Apple
-                Pay, or Google Pay. Send the ETH to your wallet (MetaMask
-                recommended).
-              </p>
-              <a
-                href={MOONPAY_BUY_ETH_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary inline-flex items-center gap-2.5 rounded-full px-6 py-3.5 text-sm font-bold text-black"
-              >
-                <CreditCard size={18} />
-                Buy ETH with Card
-                <ExternalLink size={14} className="opacity-70" />
-              </a>
-              <p className="mt-4 text-xs text-zinc-600">
-                Opens MoonPay in a new tab. No account required on troll.run.
-              </p>
+        <div className="grid items-start gap-6 lg:grid-cols-3 lg:gap-8">
+          <GlassCard className="glass-card-green flex h-full flex-col !p-6 md:!p-7" hover={false}>
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-troll-green/20 bg-troll-green/10 text-troll-green">
+              <CreditCard size={22} />
             </div>
+            <h3 className="text-lg font-black text-white">Buy with Card</h3>
+            <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-400">
+              New to crypto? Purchase ETH with credit card, debit card, Apple
+              Pay, or Google Pay via MoonPay. Send the ETH to your wallet, then
+              bridge or swap into $TROLL.
+            </p>
+            <a
+              href={MOONPAY_BUY_ETH_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-6 inline-flex items-center justify-center gap-2.5 rounded-full px-6 py-3.5 text-sm font-bold text-black"
+            >
+              Buy ETH with Card
+              <ExternalLink size={14} className="opacity-70" />
+            </a>
+            <p className="mt-3 text-xs text-zinc-600">
+              Opens MoonPay in a new tab.
+            </p>
+          </GlassCard>
 
-            <div>
-              <div className="mb-3 flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-troll-green/40 bg-troll-green/10 text-sm font-black text-troll-green">
-                  2
-                </span>
-                <h3 className="text-lg font-black text-white">
-                  Bridge / Swap to $TROLL
-                </h3>
-              </div>
-              <p className="text-sm leading-relaxed text-zinc-400">
-                Once ETH is in your wallet, use the LI.FI widget below to swap
-                or bridge directly into TrollERC20 on Ethereum. Your destination
-                is pre-set — just connect your wallet and confirm.
-              </p>
-              <ul className="mt-5 space-y-2 text-sm text-zinc-500">
-                <li className="flex items-center gap-2">
-                  <span className="h-1 w-1 rounded-full bg-troll-green" />
-                  Connect wallet to the widget below
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-1 w-1 rounded-full bg-troll-green" />
-                  Select your source chain and token
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-1 w-1 rounded-full bg-troll-green" />
-                  Receive TrollERC20 on Ethereum
-                </li>
-              </ul>
-            </div>
-          </div>
-        </GlassCard>
-
-        <div className="grid items-start gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
-          <div className="space-y-6">
-            {features.map((feature) => (
-              <GlassCard key={feature.title} className="flex gap-4 !p-5">
+          <div className="relative lg:col-span-1">
+            <GlassCard className="glass-card-green !p-4 md:!p-5" hover={false}>
+              <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-troll-green/20 bg-troll-green/10 text-troll-green">
-                  <feature.icon size={22} />
+                  <ArrowRightLeft size={22} />
                 </div>
                 <div>
-                  <h3 className="font-black text-white">{feature.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                    {feature.description}
+                  <h3 className="text-lg font-black text-white">
+                    Bridge with Relay
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Destination locked to $TROLL on Ethereum
                   </p>
                 </div>
-              </GlassCard>
-            ))}
-
-            <GlassCard className="glass-card-green !p-5" hover={false}>
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-troll-green">
-                Destination Token
-              </p>
-              <p className="text-sm font-semibold text-white">
-                TrollERC20 ($TROLL)
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">Ethereum Mainnet</p>
-              <div className="mt-4">
-                <CopyContractAddress variant="inline" />
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-troll-green/10 bg-[#0a0a0a]">
+                <RelaySwapWidget />
               </div>
             </GlassCard>
           </div>
 
-          <div className="relative">
-            <p className="mb-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-troll-green lg:text-left">
-              Step 2 — LI.FI Widget
-            </p>
-            <div className="absolute -inset-4 rounded-3xl bg-troll-green/5 blur-2xl" />
-            <div className="relative overflow-hidden rounded-3xl border border-troll-green/15 bg-[#0a0a0a] p-2 shadow-[0_0_80px_rgba(34,197,94,0.12)] sm:p-3">
-              <LiFiBridgeWidget />
+          <GlassCard className="glass-card-green flex h-full flex-col !p-6 md:!p-7" hover={false}>
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-troll-green/20 bg-troll-green/10 text-troll-green">
+              <Repeat size={22} />
             </div>
-          </div>
+            <h3 className="text-lg font-black text-white">
+              Buy directly on Uniswap
+            </h3>
+            <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-400">
+              Already have ETH in your wallet? Swap directly on Uniswap with
+              $TROLL pre-selected as the output token on Ethereum mainnet.
+            </p>
+            <a
+              href={UNISWAP_SWAP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-6 inline-flex items-center justify-center gap-2.5 rounded-full px-6 py-3.5 text-sm font-bold text-black"
+            >
+              Buy $TROLL on Uniswap
+              <ExternalLink size={14} className="opacity-70" />
+            </a>
+            <p className="mt-3 text-xs text-zinc-600">
+              Opens Uniswap in a new tab.
+            </p>
+          </GlassCard>
         </div>
+
+        <GlassCard className="mt-8 !p-5 md:!p-6" hover={false}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-troll-green">
+                Contract Address
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                TrollERC20 ($TROLL) · Ethereum Mainnet
+              </p>
+            </div>
+            <CopyContractAddress variant="inline" />
+          </div>
+        </GlassCard>
       </div>
     </section>
   );

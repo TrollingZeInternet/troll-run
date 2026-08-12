@@ -3,10 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   turbopack: {},
   transpilePackages: [
-    "@lifi/widget",
-    "@lifi/widget-provider-ethereum",
-    "@lifi/widget-provider",
-    "@lifi/wallet-management",
+    "@relayprotocol/relay-kit-ui",
+    "@relayprotocol/relay-kit-hooks",
+    "@relayprotocol/relay-sdk",
     "@wagmi/connectors",
     "wagmi",
   ],
