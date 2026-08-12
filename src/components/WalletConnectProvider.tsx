@@ -14,7 +14,11 @@ import {
   type ReactNode,
 } from "react";
 import { useAccount, useConnect, useDisconnect, type Config } from "wagmi";
+import { SOLANA_CHAIN_ID } from "@/lib/relay-config";
 import { connectSolanaWallet } from "@/lib/solana-connect";
+import {
+  normalizeSolanaConnector,
+} from "@/lib/wallet-utils";
 import {
   EVM_WALLET_OPTIONS,
   getConnectorById,
@@ -46,6 +50,10 @@ type WalletConnectContextValue = {
   linkWallet: (params: LinkWalletParams) => Promise<LinkedWallet>;
   connectEvmWallet: (walletId: EvmWalletId) => Promise<void>;
   connectSolanaWalletByName: (walletName: SolanaWalletName) => Promise<void>;
+  disconnectEvmWallet: () => Promise<void>;
+  disconnectSolanaWallet: () => Promise<void>;
+  disconnectAllWallets: () => Promise<void>;
+  activeEvmConnectorId?: string;
 };
 
 const WalletConnectContext = createContext<WalletConnectContextValue | null>(
@@ -78,7 +86,7 @@ function toSvmLinkedWallet(
   return {
     address,
     vmType: "svm",
-    connector: connector ?? "phantom",
+    connector: normalizeSolanaConnector(connector),
   };
 }
 
@@ -98,11 +106,12 @@ export default function WalletConnectProvider({
     connected: isSolanaConnected,
     wallets,
     select,
+    disconnect: disconnectSolana,
   } = useWallet();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalFilter, setModalFilter] = useState<"all" | "evm" | "svm">("all");
-  const [primaryAddress, setPrimaryAddress] = useState<string | undefined>();
+  const [primaryAddress, setPrimaryAddressState] = useState<string | undefined>();
   const [connectError, setConnectError] = useState<string | null>(null);
   const pendingLink = useRef<PendingLink | null>(null);
 
@@ -112,7 +121,7 @@ export default function WalletConnectProvider({
     const linked: LinkedWallet[] = [];
 
     if (address) {
-      linked.push(toEvmLinkedWallet(address, connector?.name));
+      linked.push(toEvmLinkedWallet(address, connector?.id ?? connector?.name));
     }
 
     if (solanaAddress) {
@@ -122,27 +131,44 @@ export default function WalletConnectProvider({
     }
 
     return linked;
-  }, [address, connector?.name, solanaAddress, solanaWallet?.adapter.name]);
+  }, [address, connector?.id, connector?.name, solanaAddress, solanaWallet?.adapter.name]);
+
+  const setPrimaryAddress = useCallback((nextAddress: string) => {
+    setPrimaryAddressState(nextAddress);
+  }, []);
 
   useEffect(() => {
-    if (primaryAddress) {
+    if (linkedWallets.length === 0) {
+      setPrimaryAddressState(undefined);
+      return;
+    }
+
+    if (
+      primaryAddress &&
+      linkedWallets.some((wallet) =>
+        wallet.vmType === "evm"
+          ? wallet.address.toLowerCase() === primaryAddress.toLowerCase()
+          : wallet.address === primaryAddress,
+      )
+    ) {
       return;
     }
 
     if (address) {
-      setPrimaryAddress(address);
+      setPrimaryAddressState(address);
       return;
     }
 
     if (solanaAddress) {
-      setPrimaryAddress(solanaAddress);
+      setPrimaryAddressState(solanaAddress);
     }
-  }, [address, solanaAddress, primaryAddress]);
+  }, [address, linkedWallets, primaryAddress, solanaAddress]);
 
   const resolvePendingLink = useCallback(
     (wallet: LinkedWallet) => {
       pendingLink.current?.resolve(wallet);
       pendingLink.current = null;
+      setPrimaryAddressState(wallet.address);
       setModalOpen(false);
       setConnectError(null);
     },
@@ -155,7 +181,7 @@ export default function WalletConnectProvider({
     }
 
     if (pendingLink.current.vmType === "evm" && address) {
-      resolvePendingLink(toEvmLinkedWallet(address, connector?.name));
+      resolvePendingLink(toEvmLinkedWallet(address, connector?.id ?? connector?.name));
     }
 
     if (pendingLink.current.vmType === "svm" && solanaAddress) {
@@ -165,10 +191,71 @@ export default function WalletConnectProvider({
     }
   }, [
     address,
+    connector?.id,
     connector?.name,
     resolvePendingLink,
     solanaAddress,
     solanaWallet?.adapter.name,
+  ]);
+
+  const disconnectEvmWallet = useCallback(async () => {
+    setConnectError(null);
+
+    try {
+      await disconnectAsync();
+
+      if (
+        primaryAddress &&
+        address &&
+        primaryAddress.toLowerCase() === address.toLowerCase()
+      ) {
+        setPrimaryAddressState(solanaAddress);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to disconnect EVM wallet.";
+      setConnectError(message);
+    }
+  }, [address, disconnectAsync, primaryAddress, solanaAddress]);
+
+  const disconnectSolanaWallet = useCallback(async () => {
+    setConnectError(null);
+
+    try {
+      await disconnectSolana();
+
+      if (primaryAddress && primaryAddress === solanaAddress) {
+        setPrimaryAddressState(address);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to disconnect Solana wallet.";
+      setConnectError(message);
+    }
+  }, [address, disconnectSolana, primaryAddress, solanaAddress]);
+
+  const disconnectAllWallets = useCallback(async () => {
+    setConnectError(null);
+
+    try {
+      await Promise.allSettled([
+        isEvmConnected ? disconnectAsync() : Promise.resolve(),
+        isSolanaConnected ? disconnectSolana() : Promise.resolve(),
+      ]);
+      setPrimaryAddressState(undefined);
+      setModalOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to disconnect wallets.";
+      setConnectError(message);
+    }
+  }, [
+    disconnectAsync,
+    disconnectSolana,
+    isEvmConnected,
+    isSolanaConnected,
   ]);
 
   const connectEvmWallet = useCallback(
@@ -195,7 +282,12 @@ export default function WalletConnectProvider({
           await disconnectAsync();
         }
 
-        await connectAsync({ connector: selectedConnector });
+        const result = await connectAsync({ connector: selectedConnector });
+        const connectedAddress = result.accounts[0];
+
+        if (connectedAddress) {
+          setPrimaryAddressState(connectedAddress);
+        }
 
         if (!pendingLink.current) {
           window.setTimeout(() => {
@@ -230,6 +322,13 @@ export default function WalletConnectProvider({
           solanaWallet,
         );
 
+        const target = wallets.find((entry) => entry.adapter.name === walletName);
+        const connectedAddress = target?.adapter.publicKey?.toBase58();
+
+        if (connectedAddress) {
+          setPrimaryAddressState(connectedAddress);
+        }
+
         if (!pendingLink.current) {
           window.setTimeout(() => {
             setModalOpen(false);
@@ -256,34 +355,29 @@ export default function WalletConnectProvider({
   const linkWallet = useCallback(
     ({ chain }: LinkWalletParams) => {
       const vmType =
-        chain?.vmType === "svm" || chain?.id === 792703809 ? "svm" : "evm";
+        chain?.vmType === "svm" || chain?.id === SOLANA_CHAIN_ID ? "svm" : "evm";
 
-      if (vmType === "evm") {
-        if (address) {
-          return Promise.resolve(toEvmLinkedWallet(address, connector?.name));
-        }
-
-        return new Promise<LinkedWallet>((resolve, reject) => {
-          pendingLink.current = { resolve, reject, vmType: "evm" };
-          setModalFilter("evm");
-          setModalOpen(true);
-        });
+      if (vmType === "evm" && address) {
+        return Promise.resolve(
+          toEvmLinkedWallet(address, connector?.id ?? connector?.name),
+        );
       }
 
-      if (solanaAddress) {
+      if (vmType === "svm" && solanaAddress) {
         return Promise.resolve(
           toSvmLinkedWallet(solanaAddress, solanaWallet?.adapter.name),
         );
       }
 
       return new Promise<LinkedWallet>((resolve, reject) => {
-        pendingLink.current = { resolve, reject, vmType: "svm" };
-        setModalFilter("svm");
+        pendingLink.current = { resolve, reject, vmType };
+        setModalFilter(vmType);
         setModalOpen(true);
       });
     },
     [
       address,
+      connector?.id,
       connector?.name,
       solanaAddress,
       solanaWallet?.adapter.name,
@@ -306,14 +400,23 @@ export default function WalletConnectProvider({
       linkWallet,
       connectEvmWallet,
       connectSolanaWalletByName,
+      disconnectEvmWallet,
+      disconnectSolanaWallet,
+      disconnectAllWallets,
+      activeEvmConnectorId: connector?.id,
     }),
     [
       linkedWallets,
       primaryAddress,
+      setPrimaryAddress,
       openConnectModal,
       linkWallet,
       connectEvmWallet,
       connectSolanaWalletByName,
+      disconnectEvmWallet,
+      disconnectSolanaWallet,
+      disconnectAllWallets,
+      connector?.id,
     ],
   );
 
@@ -326,12 +429,17 @@ export default function WalletConnectProvider({
         onClose={handleCloseModal}
         onEvmConnect={connectEvmWallet}
         onSolanaConnect={connectSolanaWalletByName}
+        onDisconnectEvm={() => void disconnectEvmWallet()}
+        onDisconnectSolana={() => void disconnectSolanaWallet()}
+        onDisconnectAll={() => void disconnectAllWallets()}
         evmWalletOptions={EVM_WALLET_OPTIONS}
         isEvmConnecting={isEvmConnecting}
         isEvmConnected={isEvmConnected}
         isSolanaConnected={isSolanaConnected}
         evmAddress={address}
         solanaAddress={solanaAddress}
+        activeEvmConnectorId={connector?.id}
+        activeSolanaWalletName={solanaWallet?.adapter.name}
         connectError={connectError}
       />
     </WalletConnectContext.Provider>

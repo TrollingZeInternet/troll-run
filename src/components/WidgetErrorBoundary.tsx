@@ -5,6 +5,7 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 interface WidgetErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
+  resetKey?: string;
 }
 
 interface WidgetErrorBoundaryState {
@@ -21,6 +22,12 @@ export default class WidgetErrorBoundary extends Component<
     return { hasError: true };
   }
 
+  componentDidUpdate(prevProps: WidgetErrorBoundaryProps) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
+  }
+
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("Relay widget error:", error, info);
   }
@@ -31,7 +38,7 @@ export default class WidgetErrorBoundary extends Component<
         this.props.fallback ?? (
           <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
             <p className="text-sm font-semibold text-white">
-              Wallet connected, but the swap widget needs a refresh.
+              The swap widget hit a sync issue. Retry or reconnect your wallet.
             </p>
             <button
               type="button"
