@@ -1,12 +1,8 @@
-import {
-  coinbaseWallet,
-  injected,
-  metaMask,
-  walletConnect,
-} from "@wagmi/connectors";
+import { injected, walletConnect } from "@wagmi/connectors";
 import { createConfig, http, type Config } from "wagmi";
 import { mainnet, type Chain } from "wagmi/chains";
 import type { EIP1193Provider } from "viem";
+import { getRabbyProviderFromWindow } from "./wallet-detection";
 import { WALLET_CONNECT_PROJECT_ID } from "./relay-config";
 
 const appMetadata = {
@@ -26,27 +22,33 @@ const appMetadata = {
 };
 
 export const EVM_WALLET_OPTIONS = [
-  { id: "metaMask", label: "MetaMask" },
-  { id: "rabby", label: "Rabby" },
-  { id: "coinbaseWallet", label: "Coinbase Wallet" },
-  { id: "walletConnect", label: "WalletConnect" },
+  { id: "metaMask", label: "MetaMask", connectorId: "metaMask" },
+  { id: "rabby", label: "Rabby", connectorId: "rabby" },
+  {
+    id: "coinbaseWallet",
+    label: "Coinbase Wallet",
+    connectorId: "coinbaseWallet",
+  },
+  { id: "walletConnect", label: "WalletConnect", connectorId: "walletConnect" },
 ] as const;
 
 export type EvmWalletId = (typeof EVM_WALLET_OPTIONS)[number]["id"];
 
 function createConnectors() {
   return [
-    metaMask({ dappMetadata: appMetadata }),
+    injected({ target: "metaMask" }),
     injected({
       target: {
         id: "rabby",
         name: "Rabby Wallet",
         provider(window) {
-          return (window as Window & { rabby?: EIP1193Provider }).rabby;
+          return getRabbyProviderFromWindow(
+            window as Parameters<typeof getRabbyProviderFromWindow>[0],
+          ) as EIP1193Provider | undefined;
         },
       },
     }),
-    coinbaseWallet({ appName: appMetadata.name }),
+    injected({ target: "coinbaseWallet" }),
     walletConnect({
       projectId: WALLET_CONNECT_PROJECT_ID,
       showQrModal: true,
@@ -71,9 +73,14 @@ export function createWagmiConfig(viemChains: Chain[]): Config {
   });
 }
 
-export function getConnectorById(
-  config: Config,
-  walletId: EvmWalletId,
-) {
-  return config.connectors.find((connector) => connector.id === walletId);
+export function getConnectorById(config: Config, walletId: EvmWalletId) {
+  const option = EVM_WALLET_OPTIONS.find((entry) => entry.id === walletId);
+
+  if (!option) {
+    return undefined;
+  }
+
+  return config.connectors.find(
+    (connector) => connector.id === option.connectorId,
+  );
 }

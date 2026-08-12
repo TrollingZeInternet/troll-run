@@ -1,9 +1,11 @@
 "use client";
 
-import { useWallet } from "@solana/wallet-adapter-react";
-import type { WalletName } from "@solana/wallet-adapter-base";
 import { X } from "lucide-react";
-import { useCallback } from "react";
+import {
+  isEvmWalletInstalled,
+  isSolanaWalletInstalled,
+  type SolanaWalletName,
+} from "@/lib/wallet-detection";
 import type { EvmWalletId } from "@/lib/wagmi-config";
 
 interface WalletConnectModalProps {
@@ -11,16 +13,38 @@ interface WalletConnectModalProps {
   filter: "all" | "evm" | "svm";
   onClose: () => void;
   onEvmConnect: (walletId: EvmWalletId) => Promise<void>;
-  evmWalletOptions: ReadonlyArray<{ id: EvmWalletId; label: string }>;
+  onSolanaConnect: (walletName: SolanaWalletName) => Promise<void>;
+  evmWalletOptions: ReadonlyArray<{
+    id: EvmWalletId;
+    label: string;
+    connectorId: string;
+  }>;
   isEvmConnecting: boolean;
   isEvmConnected: boolean;
   isSolanaConnected: boolean;
   evmAddress?: string;
   solanaAddress?: string;
+  connectError: string | null;
 }
+
+const SOLANA_WALLET_OPTIONS: Array<{
+  name: SolanaWalletName;
+  label: string;
+}> = [
+  { name: "Phantom", label: "Phantom" },
+  { name: "Solflare", label: "Solflare" },
+];
 
 function truncateAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
+function getEvmWalletStatus(walletId: EvmWalletId): string {
+  if (walletId === "walletConnect") {
+    return "QR code";
+  }
+
+  return isEvmWalletInstalled(walletId) ? "Detected" : "Install";
 }
 
 export default function WalletConnectModal({
@@ -28,32 +52,15 @@ export default function WalletConnectModal({
   filter,
   onClose,
   onEvmConnect,
+  onSolanaConnect,
   evmWalletOptions,
   isEvmConnecting,
   isEvmConnected,
   isSolanaConnected,
   evmAddress,
   solanaAddress,
+  connectError,
 }: WalletConnectModalProps) {
-  const { wallets, select, connect, connecting, connected, wallet } =
-    useWallet();
-
-  const solanaWalletOptions = wallets.filter((item) =>
-    ["Phantom", "Solflare", "Coinbase Wallet"].includes(item.adapter.name),
-  );
-
-  const handleSolanaConnect = useCallback(
-    async (walletName: WalletName) => {
-      try {
-        select(walletName);
-        await connect();
-      } catch {
-        // User rejected or wallet unavailable — modal stays open.
-      }
-    },
-    [connect, select],
-  );
-
   if (!open) {
     return null;
   }
@@ -86,6 +93,12 @@ export default function WalletConnectModal({
           </button>
         </div>
 
+        {connectError ? (
+          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {connectError}
+          </div>
+        ) : null}
+
         {showEvm && (
           <section className="mb-5">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-troll-green">
@@ -97,20 +110,24 @@ export default function WalletConnectModal({
               </div>
             ) : (
               <div className="space-y-2">
-                {evmWalletOptions.map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    disabled={isEvmConnecting}
-                    onClick={() => void onEvmConnect(id)}
-                    className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-troll-green/30 hover:bg-troll-green/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <span>{label}</span>
-                    <span className="text-xs text-zinc-500">
-                      {isEvmConnecting ? "Connecting…" : "Connect"}
-                    </span>
-                  </button>
-                ))}
+                {evmWalletOptions.map(({ id, label }) => {
+                  const status = getEvmWalletStatus(id);
+
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      disabled={isEvmConnecting}
+                      onClick={() => void onEvmConnect(id)}
+                      className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-troll-green/30 hover:bg-troll-green/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span>{label}</span>
+                      <span className="text-xs text-zinc-500">
+                        {isEvmConnecting ? "Connecting…" : status}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -124,24 +141,20 @@ export default function WalletConnectModal({
             {isSolanaConnected && solanaAddress ? (
               <div className="rounded-xl border border-troll-green/20 bg-troll-green/10 px-4 py-3 text-sm text-white">
                 Connected: {truncateAddress(solanaAddress)}
-                {wallet?.adapter.name ? ` (${wallet.adapter.name})` : ""}
               </div>
             ) : (
               <div className="space-y-2">
-                {solanaWalletOptions.map((item) => {
-                  const installed = item.readyState === "Installed";
+                {SOLANA_WALLET_OPTIONS.map(({ name, label }) => {
+                  const installed = isSolanaWalletInstalled(name);
 
                   return (
                     <button
-                      key={item.adapter.name}
+                      key={name}
                       type="button"
-                      disabled={connecting || connected}
-                      onClick={() =>
-                        handleSolanaConnect(item.adapter.name as WalletName)
-                      }
-                      className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-troll-green/30 hover:bg-troll-green/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => void onSolanaConnect(name)}
+                      className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-troll-green/30 hover:bg-troll-green/10"
                     >
-                      <span>{item.adapter.name}</span>
+                      <span>{label}</span>
                       <span className="text-xs text-zinc-500">
                         {installed ? "Detected" : "Install"}
                       </span>

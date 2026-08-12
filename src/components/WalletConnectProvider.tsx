@@ -13,12 +13,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAccount, useConnect, type Config } from "wagmi";
+import { useAccount, useConnect, useDisconnect, type Config } from "wagmi";
+import { connectSolanaWallet } from "@/lib/solana-connect";
 import {
   EVM_WALLET_OPTIONS,
   getConnectorById,
   type EvmWalletId,
 } from "@/lib/wagmi-config";
+import {
+  getEvmWalletInstallUrl,
+  isEvmWalletInstalled,
+  type SolanaWalletName,
+} from "@/lib/wallet-detection";
 import WalletConnectModal from "./WalletConnectModal";
 
 type LinkWalletParams = {
@@ -39,6 +45,7 @@ type WalletConnectContextValue = {
   openConnectModal: (vmType?: "evm" | "svm") => void;
   linkWallet: (params: LinkWalletParams) => Promise<LinkedWallet>;
   connectEvmWallet: (walletId: EvmWalletId) => Promise<void>;
+  connectSolanaWalletByName: (walletName: SolanaWalletName) => Promise<void>;
 };
 
 const WalletConnectContext = createContext<WalletConnectContextValue | null>(
@@ -84,30 +91,37 @@ export default function WalletConnectProvider({
 }) {
   const { address, connector, isConnected: isEvmConnected } = useAccount();
   const { connectAsync, isPending: isEvmConnecting } = useConnect();
-  const { publicKey, wallet: solanaWallet, connected: isSolanaConnected } =
-    useWallet();
+  const { disconnectAsync } = useDisconnect();
+  const {
+    publicKey,
+    wallet: solanaWallet,
+    connected: isSolanaConnected,
+    wallets,
+    select,
+  } = useWallet();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalFilter, setModalFilter] = useState<"all" | "evm" | "svm">("all");
   const [primaryAddress, setPrimaryAddress] = useState<string | undefined>();
+  const [connectError, setConnectError] = useState<string | null>(null);
   const pendingLink = useRef<PendingLink | null>(null);
 
   const solanaAddress = publicKey?.toBase58();
 
   const linkedWallets = useMemo(() => {
-    const wallets: LinkedWallet[] = [];
+    const linked: LinkedWallet[] = [];
 
     if (address) {
-      wallets.push(toEvmLinkedWallet(address, connector?.name));
+      linked.push(toEvmLinkedWallet(address, connector?.name));
     }
 
     if (solanaAddress) {
-      wallets.push(
+      linked.push(
         toSvmLinkedWallet(solanaAddress, solanaWallet?.adapter.name),
       );
     }
 
-    return wallets;
+    return linked;
   }, [address, connector?.name, solanaAddress, solanaWallet?.adapter.name]);
 
   useEffect(() => {
@@ -130,6 +144,7 @@ export default function WalletConnectProvider({
       pendingLink.current?.resolve(wallet);
       pendingLink.current = null;
       setModalOpen(false);
+      setConnectError(null);
     },
     [],
   );
@@ -158,18 +173,70 @@ export default function WalletConnectProvider({
 
   const connectEvmWallet = useCallback(
     async (walletId: EvmWalletId) => {
+      setConnectError(null);
+
+      if (walletId !== "walletConnect" && !isEvmWalletInstalled(walletId)) {
+        const installUrl = getEvmWalletInstallUrl(walletId);
+        if (installUrl) {
+          window.open(installUrl, "_blank", "noopener,noreferrer");
+        }
+        return;
+      }
+
       const selectedConnector = getConnectorById(wagmiConfig, walletId);
 
       if (!selectedConnector) {
-        throw new Error(`Connector not found: ${walletId}`);
+        setConnectError(`Wallet connector not found for ${walletId}.`);
+        return;
       }
 
-      await connectAsync({ connector: selectedConnector });
+      try {
+        if (isEvmConnected && connector?.id !== selectedConnector.id) {
+          await disconnectAsync();
+        }
+
+        await connectAsync({ connector: selectedConnector });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "EVM wallet connection failed.";
+        setConnectError(message);
+        throw error;
+      }
     },
-    [connectAsync, wagmiConfig],
+    [
+      connectAsync,
+      connector?.id,
+      disconnectAsync,
+      isEvmConnected,
+      wagmiConfig,
+    ],
+  );
+
+  const connectSolanaWalletByName = useCallback(
+    async (walletName: SolanaWalletName) => {
+      setConnectError(null);
+
+      try {
+        await connectSolanaWallet(
+          wallets,
+          walletName,
+          select,
+          solanaWallet,
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Solana wallet connection failed.";
+        setConnectError(message);
+        throw error;
+      }
+    },
+    [select, solanaWallet, wallets],
   );
 
   const openConnectModal = useCallback((vmType?: "evm" | "svm") => {
+    setConnectError(null);
     setModalFilter(vmType ?? "all");
     setModalOpen(true);
   }, []);
@@ -214,6 +281,7 @@ export default function WalletConnectProvider({
   const handleCloseModal = useCallback(() => {
     pendingLink.current?.reject(new Error("Wallet connection cancelled"));
     pendingLink.current = null;
+    setConnectError(null);
     setModalOpen(false);
   }, []);
 
@@ -225,8 +293,16 @@ export default function WalletConnectProvider({
       openConnectModal,
       linkWallet,
       connectEvmWallet,
+      connectSolanaWalletByName,
     }),
-    [linkedWallets, primaryAddress, openConnectModal, linkWallet, connectEvmWallet],
+    [
+      linkedWallets,
+      primaryAddress,
+      openConnectModal,
+      linkWallet,
+      connectEvmWallet,
+      connectSolanaWalletByName,
+    ],
   );
 
   return (
@@ -237,12 +313,14 @@ export default function WalletConnectProvider({
         filter={modalFilter}
         onClose={handleCloseModal}
         onEvmConnect={connectEvmWallet}
+        onSolanaConnect={connectSolanaWalletByName}
         evmWalletOptions={EVM_WALLET_OPTIONS}
         isEvmConnecting={isEvmConnecting}
         isEvmConnected={isEvmConnected}
         isSolanaConnected={isSolanaConnected}
         evmAddress={address}
         solanaAddress={solanaAddress}
+        connectError={connectError}
       />
     </WalletConnectContext.Provider>
   );
