@@ -33,7 +33,7 @@ const steps = [
 
 export default function HowToBuy() {
   return (
-    <section id="buy" className="relative py-24 md:py-32">
+    <section className="relative py-24 md:py-32">
       <div className="pointer-events-none absolute inset-x-0 top-0 section-divider" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-troll-green/5 blur-[120px]" />
 

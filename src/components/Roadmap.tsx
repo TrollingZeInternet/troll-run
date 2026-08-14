@@ -57,7 +57,7 @@ const statusConfig = {
 
 export default function Roadmap() {
   return (
-    <section id="roadmap" className="relative py-24 md:py-32">
+    <section className="relative py-24 md:py-32">
       <div className="pointer-events-none absolute inset-x-0 top-0 section-divider" />
       <div className="pointer-events-none absolute right-0 top-1/3 h-[400px] w-[400px] rounded-full bg-troll-green/5 blur-[100px]" />
 

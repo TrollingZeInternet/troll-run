@@ -74,7 +74,7 @@ export default function Hero() {
 
             <div className="animate-fade-up-delay-3 mt-10 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
               <a
-                href="#bridge"
+                href="/bridge"
                 className="btn-primary group flex w-full items-center justify-center gap-2.5 rounded-full px-10 py-4.5 text-base font-bold text-black sm:w-auto"
               >
                 Buy TrollERC20

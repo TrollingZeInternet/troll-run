@@ -20,7 +20,7 @@ const features = [
 
 export default function About() {
   return (
-    <section id="about" className="relative py-24 md:py-32">
+    <section className="relative py-24 md:py-32">
       <div className="pointer-events-none absolute inset-x-0 top-0 section-divider" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">

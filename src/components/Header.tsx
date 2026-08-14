@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X as CloseIcon } from "lucide-react";
 import TrollfaceImage from "./TrollfaceImage";
 
 const navLinks = [
-  { href: "#about", label: "About" },
-  { href: "#buy", label: "How to Buy" },
-  { href: "#bridge", label: "Bridge" },
-  { href: "#tokenomics", label: "Tokenomics" },
-  { href: "#roadmap", label: "Roadmap" },
+  { href: "/about", label: "About" },
+  { href: "/bridge", label: "Bridge" },
+  { href: "/tokenomics", label: "Tokenomics" },
+  { href: "/roadmap", label: "Roadmap" },
 ];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-black/60 backdrop-blur-2xl">
@@ -30,21 +32,26 @@ export default function Header() {
         </a>
 
         <nav className="hidden items-center gap-10 md:flex">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-zinc-400 transition-colors duration-200 hover:text-troll-green"
-            >
-              {link.label}
-            </a>
-          ))}
-          <a
-            href="#bridge"
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors duration-200 hover:text-troll-green ${
+                  isActive ? "text-troll-green" : "text-zinc-400"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+          <Link
+            href="/bridge"
             className="btn-primary rounded-full px-6 py-2.5 text-sm font-bold text-black"
           >
             Buy TrollERC20
-          </a>
+          </Link>
         </nav>
 
         <button
@@ -60,23 +67,28 @@ export default function Header() {
       {open && (
         <nav className="border-t border-white/[0.06] bg-black/95 px-4 py-5 backdrop-blur-2xl md:hidden">
           <div className="flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="rounded-xl px-4 py-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/5 hover:text-troll-green"
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-            <a
-              href="#bridge"
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`rounded-xl px-4 py-3 text-sm font-medium transition-colors hover:bg-white/5 hover:text-troll-green ${
+                    isActive ? "text-troll-green bg-white/5" : "text-zinc-300"
+                  }`}
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            <Link
+              href="/bridge"
               className="btn-primary mt-3 rounded-full py-3.5 text-center text-sm font-bold text-black"
               onClick={() => setOpen(false)}
             >
               Buy TrollERC20
-            </a>
+            </Link>
           </div>
         </nav>
       )}

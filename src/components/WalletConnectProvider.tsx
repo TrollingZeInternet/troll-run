@@ -143,11 +143,10 @@ export default function WalletConnectProvider({
       return;
     }
 
-    // Prefer EVM address for primary when both wallet types connected. This ensures
-    // Relay's useWalletAddress() and useMultiWalletBalances() always resolve to the
-    // correct EVM wallet for From-token balance display and quotes (TROLL destination
-    // is always on Ethereum). The effect now depends on primaryAddress to avoid stale
-    // closure issues when setPrimaryAddress is called from the widget.
+    // Respect explicit primaryAddress selection from the widget (via onSetPrimaryWallet /
+    // MultiWalletDropdown). This allows the user to switch between EVM and Solana as the
+    // "active" wallet for balance display. When no explicit primary, default to EVM if
+    // available (keeps existing bridge-to-TROLL behavior); otherwise Solana.
     if (
       primaryAddress &&
       linkedWallets.some((wallet) =>

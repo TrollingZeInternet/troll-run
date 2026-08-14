@@ -32,9 +32,11 @@ export function resolvePrimaryVmType(
   const hasEvm = linkedWallets.some((wallet) => wallet.vmType === "evm");
   const hasSvm = linkedWallets.some((wallet) => wallet.vmType === "svm");
 
-  // Prefer EVM when both wallet types are connected. This ensures the correct EVM address
-  // is used by Relay's internal useWalletAddress() + useMultiWalletBalances() for accurate
-  // From-token balance display and quote calculations (destination is always Ethereum TROLL).
+  // When only Solana is connected (or explicitly selected via onSetPrimaryWallet), return "svm"
+  // so that the adapted Solana wallet is passed to SwapWidget. This lets Relay's useWalletAddress,
+  // useMultiWalletBalances, useCodexBalances, and SVM balance hooks fetch the correct Solana
+  // token balances (native SOL + SPL tokens). EVM is still preferred when both are present to
+  // keep the working EVM balance/bridge-to-TROLL behavior.
   if (hasEvm) {
     return "evm";
   }

@@ -15,7 +15,7 @@ import {
 
 export default function Bridge() {
   return (
-    <section id="bridge" className="relative py-24 md:py-32">
+    <section className="relative py-24 md:py-32">
       <div className="pointer-events-none absolute inset-x-0 top-0 section-divider" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-troll-green/6 blur-[140px]" />
 

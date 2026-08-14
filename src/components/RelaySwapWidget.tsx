@@ -73,12 +73,12 @@ function RelaySwapWidgetInner() {
     }
   }, [connection, isSolanaConnected, publicKey, solanaWallet?.adapter]);
 
-  // Always prefer EVM for balance display and quotes when both wallets are connected (destination is always EVM TROLL).
-  // This ensures the correct EVM wallet address is used by Relay's useWalletAddress / useMultiWalletBalances for From-token balances.
+  // Pass the adapted Solana wallet *only* when SVM is the resolved primary VM type.
+  // This allows Relay to use its full SVM balance hooks (useCodexBalances + native SOL merge)
+  // for correct token balances in the widget when a Solana wallet is primary/active.
+  // EVM flows remain unchanged (wallet=undefined, falls back to wagmi/RelayKitProvider).
   const activeWallet =
-    primaryVmType === "svm" && linkedWallets.every((w) => w.vmType === "svm")
-      ? solanaAdaptedWallet
-      : undefined;
+    primaryVmType === "svm" ? solanaAdaptedWallet : undefined;
 
   const isSolanaWalletBootstrapping =
     primaryVmType === "svm" && isSolanaConnected && !solanaAdaptedWallet;

@@ -1,3 +1,7 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MessageCircle, BarChart3 } from "lucide-react";
 import TrollfaceImage from "./TrollfaceImage";
 import { ETHERSCAN_URL } from "@/lib/constants";
@@ -17,14 +21,15 @@ const socials = [
 ];
 
 const footerLinks = [
-  { href: "#about", label: "About" },
-  { href: "#buy", label: "How to Buy" },
-  { href: "#bridge", label: "Bridge" },
-  { href: "#tokenomics", label: "Tokenomics" },
-  { href: "#roadmap", label: "Roadmap" },
+  { href: "/about", label: "About" },
+  { href: "/bridge", label: "Bridge" },
+  { href: "/tokenomics", label: "Tokenomics" },
+  { href: "/roadmap", label: "Roadmap" },
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
   return (
     <footer className="relative border-t border-white/[0.06] bg-black">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-troll-green/20 to-transparent" />
@@ -49,16 +54,21 @@ export default function Footer() {
               Quick Links
             </h4>
             <ul className="space-y-3">
-              {footerLinks.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-zinc-500 transition-colors hover:text-troll-green"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+              {footerLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={`text-sm transition-colors hover:text-troll-green ${
+                        isActive ? "text-troll-green" : "text-zinc-500"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
