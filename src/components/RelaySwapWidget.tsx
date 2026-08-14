@@ -3,6 +3,7 @@
 import { SwapWidget, type Token } from "@relayprotocol/relay-kit-ui";
 import { adaptSolanaWallet } from "@relayprotocol/relay-svm-wallet-adapter";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
 import { useCallback, useMemo } from "react";
 import ClientOnly from "./ClientOnly";
 import RelayProviders from "./RelayProviders";
@@ -13,6 +14,7 @@ import {
   ETHEREUM_CHAIN_ID,
   RELAY_DEFAULT_SWAP_AMOUNT,
   SOLANA_CHAIN_ID,
+  SOLANA_NATIVE_ADDRESS,
   TROLL_TOKEN,
 } from "@/lib/relay-config";
 import { resolvePrimaryVmType } from "@/lib/wallet-utils";
@@ -55,19 +57,45 @@ function RelaySwapWidgetInner() {
     const adapter = solanaWallet.adapter;
 
     try {
-      return adaptSolanaWallet(
-        walletAddress,
-        SOLANA_CHAIN_ID,
-        connection,
-        async (transaction, options) => {
-          const signature = await adapter.sendTransaction(
-            transaction,
-            connection,
-            options,
+      return {
+        ...adaptSolanaWallet(
+          walletAddress,
+          SOLANA_CHAIN_ID,
+          connection,
+          async (transaction, options) => {
+            const signature = await adapter.sendTransaction(
+              transaction,
+              connection,
+              options,
+            );
+            return { signature };
+          },
+        ),
+        // Relay prefers wallet.getBalance over useSolanaBalance when present.
+        getBalance: async (
+          _chainId: number,
+          ownerAddress: string,
+          tokenAddress?: string,
+        ) => {
+          const owner = new PublicKey(ownerAddress);
+          if (!tokenAddress || tokenAddress === SOLANA_NATIVE_ADDRESS) {
+            return BigInt(await connection.getBalance(owner));
+          }
+
+          const { value } = await connection.getParsedTokenAccountsByOwner(
+            owner,
+            { mint: new PublicKey(tokenAddress) },
           );
-          return { signature };
+
+          return value.reduce((total, account) => {
+            const amount =
+              "parsed" in account.account.data
+                ? account.account.data.parsed?.info?.tokenAmount?.amount
+                : undefined;
+            return total + BigInt(amount ?? 0);
+          }, BigInt(0));
         },
-      );
+      };
     } catch {
       return undefined;
     }

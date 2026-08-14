@@ -1,4 +1,5 @@
 import type { RelayKitTheme, Token } from "@relayprotocol/relay-kit-ui";
+import type { RelayChain } from "@relayprotocol/relay-sdk";
 import {
   CONTRACT_ADDRESS,
   TROLLFACE_IMAGE,
@@ -9,7 +10,19 @@ export const ETHEREUM_CHAIN_ID = 1;
 /** Relay chain ID for Solana mainnet */
 export const SOLANA_CHAIN_ID = 792703809;
 
-export const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
+/** Native SOL mint — Relay's useSolanaBalance treats this as getBalance, not SPL. */
+export const SOLANA_NATIVE_ADDRESS = "11111111111111111111111111111111";
+
+/** Upstream JSON-RPC used by the same-origin proxy. */
+export const SOLANA_UPSTREAM_RPC_URL =
+  process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+
+/**
+ * Browser-facing Solana RPC. Public mainnet-beta often 403/429s from the
+ * browser, which makes Relay show native SOL as 0. Same-origin proxy avoids that.
+ */
+export const SOLANA_RPC_URL =
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "/api/solana-rpc";
 
 /**
  * Explicit Solana chain config for RelayKitProvider.
@@ -17,18 +30,20 @@ export const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
  * allowing native SOL balance to be fetched via RPC (merged with Codex SPL tokens).
  * Matches the shape expected by useCodexBalances / getSvmNativeChains.
  */
-export const SOLANA_CHAIN_CONFIG = {
+export const SOLANA_CHAIN_CONFIG: RelayChain = {
   id: SOLANA_CHAIN_ID,
   name: "Solana",
   displayName: "Solana",
-  vmType: "svm" as const,
+  vmType: "svm",
   httpRpcUrl: SOLANA_RPC_URL,
   currency: {
+    id: "sol",
     name: "Solana",
     symbol: "SOL",
     decimals: 9,
+    address: SOLANA_NATIVE_ADDRESS,
   },
-} as const;
+};
 
 export const WALLET_CONNECT_PROJECT_ID =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
