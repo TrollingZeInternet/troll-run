@@ -1,30 +1,75 @@
-import SectionHeading from "@/components/SectionHeading";
-import GlassCard from "@/components/GlassCard";
+"use client";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { ScannerShell } from "./components/ScannerShell";
+import { ScannerInput } from "./components/ScannerInput";
+import { ScannerLoading } from "./components/ScannerLoading";
+import { ScannerError } from "./components/ScannerError";
+import { ScannerResults } from "./components/ScannerResults";
+import { useScanner } from "@/lib/scanner/useScanner";
+
+function ScannerPageContent() {
+  const searchParams = useSearchParams();
+  const useMock = searchParams.get("mock") === "1";
+
+  const {
+    address,
+    network,
+    loading,
+    result,
+    error,
+    activeTab,
+    handleAddressChange,
+    handleNetworkChange,
+    handleTabChange,
+    handleScan,
+  } = useScanner({ useMock });
+
+  return (
+    <ScannerShell version="v5.2">
+      {useMock && (
+        <div className="ts-meta-badge ts-meta-badge--cached ts-mb ts-mock-banner">
+          MOCK MODE — API bypassed
+        </div>
+      )}
+
+      <ScannerInput
+        address={address}
+        network={network}
+        loading={loading}
+        onAddressChange={handleAddressChange}
+        onNetworkChange={handleNetworkChange}
+        onScan={handleScan}
+      />
+
+      {error && <ScannerError error={error} />}
+
+      {loading && <ScannerLoading />}
+
+      {result && !loading && (
+        <ScannerResults
+          result={result}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
+      )}
+    </ScannerShell>
+  );
+}
 
 export default function ScannerPage() {
   return (
     <div className="pt-20">
-      <section className="relative py-24 md:py-32">
-        <div className="pointer-events-none absolute inset-x-0 top-0 section-divider" />
-
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
-            label="Scanner"
-            title="Troll Scanner"
-            description="Paste a token contract and we will score the usual red flags. Full scan engine is wiring up next."
-          />
-
-          <GlassCard hover={false} className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-troll-green">
-              Coming online
-            </p>
-            <p className="mt-4 text-lg text-zinc-400">
-              The token scanner foundation is in place. Scan input, results, and
-              live API land in the next phase.
-            </p>
-          </GlassCard>
-        </div>
-      </section>
+      <Suspense
+        fallback={
+          <ScannerShell version="v5.2">
+            <ScannerLoading />
+          </ScannerShell>
+        }
+      >
+        <ScannerPageContent />
+      </Suspense>
     </div>
   );
 }
