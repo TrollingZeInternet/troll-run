@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "node scripts/patch-relay-swap-widget.mjs"
+    "postinstall": "node scripts/patch-relay-swap-widget.mjs",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.2",
     "@relayprotocol/relay-kit-hooks": "^4.0.2",
     "@relayprotocol/relay-kit-ui": "^11.0.2",
     "@relayprotocol/relay-sdk": "^7.0.1",
@@ -37,6 +40,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

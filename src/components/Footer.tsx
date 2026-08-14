@@ -23,6 +23,7 @@ const socials = [
 const footerLinks = [
   { href: "/about", label: "About" },
   { href: "/bridge", label: "Bridge" },
+  { href: "/scanner", label: "Scanner" },
   { href: "/tokenomics", label: "Tokenomics" },
   { href: "/roadmap", label: "Roadmap" },
 ];
