@@ -13,16 +13,44 @@ export const SOLANA_CHAIN_ID = 792703809;
 /** Native SOL mint — Relay's useSolanaBalance treats this as getBalance, not SPL. */
 export const SOLANA_NATIVE_ADDRESS = "11111111111111111111111111111111";
 
-/** Upstream JSON-RPC used by the same-origin proxy. */
-export const SOLANA_UPSTREAM_RPC_URL =
-  process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+export const SOLANA_RPC_PROXY_PATH = "/api/solana-rpc";
+
+const DEFAULT_SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
+
+function isAbsoluteHttpUrl(value: string): boolean {
+  return value.startsWith("http://") || value.startsWith("https://");
+}
+
+function absoluteRpcUrl(value: string | undefined, fallback: string): string {
+  return value && isAbsoluteHttpUrl(value) ? value : fallback;
+}
+
+/** Upstream JSON-RPC used by the same-origin proxy. Always http(s). */
+export const SOLANA_UPSTREAM_RPC_URL = absoluteRpcUrl(
+  process.env.SOLANA_RPC_URL,
+  DEFAULT_SOLANA_RPC_URL,
+);
 
 /**
- * Browser-facing Solana RPC. Public mainnet-beta often 403/429s from the
- * browser, which makes Relay show native SOL as 0. Same-origin proxy avoids that.
+ * Absolute Solana RPC for web3.js Connection and Relay httpRpcUrl.
+ * Relative paths crash Connection ("Endpoint URL must start with `http:` or `https:`").
+ * On the client, prefer the same-origin proxy; otherwise the public RPC.
  */
-export const SOLANA_RPC_URL =
-  process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "/api/solana-rpc";
+export function getSolanaRpcUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
+  if (configured && isAbsoluteHttpUrl(configured)) {
+    return configured;
+  }
+
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}${SOLANA_RPC_PROXY_PATH}`;
+  }
+
+  return SOLANA_UPSTREAM_RPC_URL;
+}
+
+/** Always an absolute http(s) URL. Prefer getSolanaRpcUrl() in client components. */
+export const SOLANA_RPC_URL = getSolanaRpcUrl();
 
 /**
  * Explicit Solana chain config for RelayKitProvider.
@@ -35,7 +63,7 @@ export const SOLANA_CHAIN_CONFIG: RelayChain = {
   name: "Solana",
   displayName: "Solana",
   vmType: "svm",
-  httpRpcUrl: SOLANA_RPC_URL,
+  httpRpcUrl: SOLANA_UPSTREAM_RPC_URL,
   currency: {
     id: "sol",
     name: "Solana",

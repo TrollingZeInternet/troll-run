@@ -8,10 +8,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { WagmiProvider, type Config } from "wagmi";
 import { initEip6963Discovery } from "@/lib/eip6963";
 import {
+  getSolanaRpcUrl,
   relayKitTheme,
   SOLANA_CHAIN_CONFIG,
   SOLANA_CHAIN_ID,
-  SOLANA_RPC_URL,
 } from "@/lib/relay-config";
 import { createWagmiConfig } from "@/lib/wagmi-config";
 import SolanaWalletProvider from "./SolanaWalletProvider";
@@ -51,6 +51,7 @@ function RelayWagmiBridge({ children }: { children: ReactNode }) {
   // Overlay our Solana RPC/currency onto Relay's Solana chain, then put it first.
   // A bare prepend would win `chains.find(id)` and drop currency.address / explorer.
   const relaySolana = chains.find((chain) => chain.id === SOLANA_CHAIN_ID);
+  const solanaRpcUrl = getSolanaRpcUrl();
   const solanaChain = {
     ...relaySolana,
     ...SOLANA_CHAIN_CONFIG,
@@ -58,7 +59,7 @@ function RelayWagmiBridge({ children }: { children: ReactNode }) {
       ...relaySolana?.currency,
       ...SOLANA_CHAIN_CONFIG.currency,
     },
-    httpRpcUrl: SOLANA_RPC_URL,
+    httpRpcUrl: solanaRpcUrl,
   };
 
   return (

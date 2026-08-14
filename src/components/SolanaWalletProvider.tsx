@@ -7,7 +7,7 @@ import {
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import { useMemo, type ReactNode } from "react";
-import { SOLANA_RPC_URL } from "@/lib/relay-config";
+import { getSolanaRpcUrl } from "@/lib/relay-config";
 
 export default function SolanaWalletProvider({
   children,
@@ -18,10 +18,11 @@ export default function SolanaWalletProvider({
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
     [],
   );
+  const endpoint = useMemo(() => getSolanaRpcUrl(), []);
 
   return (
     <ConnectionProvider
-      endpoint={SOLANA_RPC_URL}
+      endpoint={endpoint}
       config={{ commitment: "confirmed" }}
     >
       <WalletProvider
