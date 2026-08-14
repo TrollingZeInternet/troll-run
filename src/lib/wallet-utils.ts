@@ -32,6 +32,9 @@ export function resolvePrimaryVmType(
   const hasEvm = linkedWallets.some((wallet) => wallet.vmType === "evm");
   const hasSvm = linkedWallets.some((wallet) => wallet.vmType === "svm");
 
+  // Prefer EVM when both wallet types are connected. This ensures the correct EVM address
+  // is used by Relay's internal useWalletAddress() + useMultiWalletBalances() for accurate
+  // From-token balance display and quote calculations (destination is always Ethereum TROLL).
   if (hasEvm) {
     return "evm";
   }

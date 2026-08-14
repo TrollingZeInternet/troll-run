@@ -143,6 +143,11 @@ export default function WalletConnectProvider({
       return;
     }
 
+    // Prefer EVM address for primary when both wallet types connected. This ensures
+    // Relay's useWalletAddress() and useMultiWalletBalances() always resolve to the
+    // correct EVM wallet for From-token balance display and quotes (TROLL destination
+    // is always on Ethereum). The effect now depends on primaryAddress to avoid stale
+    // closure issues when setPrimaryAddress is called from the widget.
     if (
       primaryAddress &&
       linkedWallets.some((wallet) =>
@@ -204,19 +209,19 @@ export default function WalletConnectProvider({
     try {
       await disconnectAsync();
 
-      if (
-        primaryAddress &&
-        address &&
-        primaryAddress.toLowerCase() === address.toLowerCase()
-      ) {
+      // After EVM disconnect, prefer remaining Solana if present (or undefined).
+      // This keeps primaryAddress in sync with linkedWallets for Relay balance queries.
+      if (solanaAddress) {
         setPrimaryAddressState(solanaAddress);
+      } else {
+        setPrimaryAddressState(undefined);
       }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to disconnect EVM wallet.";
       setConnectError(message);
     }
-  }, [address, disconnectAsync, primaryAddress, solanaAddress]);
+  }, [disconnectAsync, solanaAddress]);
 
   const disconnectSolanaWallet = useCallback(async () => {
     setConnectError(null);
@@ -224,8 +229,12 @@ export default function WalletConnectProvider({
     try {
       await disconnectSolana();
 
-      if (primaryAddress && primaryAddress === solanaAddress) {
+      // After Solana disconnect, prefer remaining EVM address (or undefined).
+      // Ensures primaryAddress always points to a connected wallet for correct balance display.
+      if (address) {
         setPrimaryAddressState(address);
+      } else {
+        setPrimaryAddressState(undefined);
       }
     } catch (error) {
       const message =
@@ -234,7 +243,7 @@ export default function WalletConnectProvider({
           : "Failed to disconnect Solana wallet.";
       setConnectError(message);
     }
-  }, [address, disconnectSolana, primaryAddress, solanaAddress]);
+  }, [address, disconnectSolana]);
 
   const disconnectAllWallets = useCallback(async () => {
     setConnectError(null);

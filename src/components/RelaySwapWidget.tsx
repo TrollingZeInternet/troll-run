@@ -73,15 +73,23 @@ function RelaySwapWidgetInner() {
     }
   }, [connection, isSolanaConnected, publicKey, solanaWallet?.adapter]);
 
+  // Always prefer EVM for balance display and quotes when both wallets are connected (destination is always EVM TROLL).
+  // This ensures the correct EVM wallet address is used by Relay's useWalletAddress / useMultiWalletBalances for From-token balances.
   const activeWallet =
-    primaryVmType === "svm" ? solanaAdaptedWallet : undefined;
+    primaryVmType === "svm" && linkedWallets.every((w) => w.vmType === "svm")
+      ? solanaAdaptedWallet
+      : undefined;
 
   const isSolanaWalletBootstrapping =
     primaryVmType === "svm" && isSolanaConnected && !solanaAdaptedWallet;
 
   const handleSetPrimaryWallet = useCallback(
     (address: string) => {
-      queueMicrotask(() => setPrimaryAddress(address));
+      // Use direct set (no queueMicrotask) to ensure immediate sync between widget's
+      // onSetPrimaryWallet callback and our primaryAddress state. This fixes balance
+      // display lag and ensures Relay's useWalletAddress / useMultiWalletBalances
+      // immediately sees the correct wallet for the selected From token.
+      setPrimaryAddress(address);
     },
     [setPrimaryAddress],
   );
