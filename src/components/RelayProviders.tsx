@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { WagmiProvider, type Config } from "wagmi";
 import { initEip6963Discovery } from "@/lib/eip6963";
-import { relayKitTheme } from "@/lib/relay-config";
+import { relayKitTheme, SOLANA_CHAIN_CONFIG } from "@/lib/relay-config";
 import { createWagmiConfig } from "@/lib/wagmi-config";
 import SolanaWalletProvider from "./SolanaWalletProvider";
 import WalletConnectProvider from "./WalletConnectProvider";
@@ -52,8 +52,15 @@ function RelayWagmiBridge({ children }: { children: ReactNode }) {
             appName: "TrollERC20",
             source: "troll.run",
             themeScheme: "dark",
-            chains,
+            // Merge explicit Solana config (with httpRpcUrl + currency) so that
+            // getSvmNativeChains() in useCodexBalances can fetch native SOL balance via RPC.
+            // Dynamic chains from useRelayChains are kept for other SVM/EVM details.
+            // Explicit config takes precedence for native balance.
+            chains: [SOLANA_CHAIN_CONFIG, ...(chains ?? [])],
             baseApiUrl: MAINNET_RELAY_API,
+            codexConfig: {
+              apiBaseUrl: "https://graph.codex.io",
+            },
           }}
         >
           <WalletConnectProvider wagmiConfig={wagmiConfig}>

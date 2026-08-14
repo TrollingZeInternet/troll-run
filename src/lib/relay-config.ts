@@ -11,6 +11,25 @@ export const SOLANA_CHAIN_ID = 792703809;
 
 export const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
 
+/**
+ * Explicit Solana chain config for RelayKitProvider.
+ * This ensures getSvmNativeChains() returns a valid entry with httpRpcUrl,
+ * allowing native SOL balance to be fetched via RPC (merged with Codex SPL tokens).
+ * Matches the shape expected by useCodexBalances / getSvmNativeChains.
+ */
+export const SOLANA_CHAIN_CONFIG = {
+  id: SOLANA_CHAIN_ID,
+  name: "Solana",
+  displayName: "Solana",
+  vmType: "svm" as const,
+  httpRpcUrl: SOLANA_RPC_URL,
+  currency: {
+    name: "Solana",
+    symbol: "SOL",
+    decimals: 9,
+  },
+} as const;
+
 export const WALLET_CONNECT_PROJECT_ID =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
   "5432e3507d41270bee46b7b85bbc2ef8";
