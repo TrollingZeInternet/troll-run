@@ -4,7 +4,8 @@ export const TOTAL_SUPPLY = 960_420_000_000_000;
 export const TOTAL_SUPPLY_FORMATTED = "960,420,000,000,000";
 export const TOTAL_SUPPLY_SHORT = "960.42T";
 export const TAX = "0%";
-export const LP_BURNED = "93.1%";
+export const LP_BURNED = "100%";
+export const LP_BURNED_PERCENT = 100;
 
 export const UNISWAP_SWAP_URL = `https://app.uniswap.org/#/swap?outputCurrency=${CONTRACT_ADDRESS}`;
 

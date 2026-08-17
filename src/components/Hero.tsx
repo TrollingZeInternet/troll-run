@@ -8,14 +8,14 @@ const tickerItems = [
   "$TROLL",
   "ETHEREUM",
   "0% TAX",
-  "93.1% LP BURNED",
+  `${LP_BURNED} LP BURNED`,
   "960.42T SUPPLY",
   "TROLL OR BE TROLLED",
   "TROLLERC20",
   "$TROLL",
   "ETHEREUM",
   "0% TAX",
-  "93.1% LP BURNED",
+  `${LP_BURNED} LP BURNED`,
 ];
 
 const heroStats = [

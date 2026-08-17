@@ -4,6 +4,7 @@ import CopyContractAddress from "./CopyContractAddress";
 import {
   CONTRACT_ADDRESS,
   LP_BURNED,
+  LP_BURNED_PERCENT,
   TAX,
   TOTAL_SUPPLY_FORMATTED,
 } from "@/lib/constants";
@@ -18,7 +19,7 @@ const tokenData = [
   { label: "Liquidity", value: `${LP_BURNED} Burned` },
 ];
 
-const distribution = [{ label: "Liquidity Burned", percent: 93.1 }];
+const distribution = [{ label: "Liquidity Burned", percent: LP_BURNED_PERCENT }];
 
 const miniStats = [
   { value: TAX, label: "Tax" },

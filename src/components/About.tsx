@@ -13,7 +13,7 @@ const stats = [
 
 const features = [
   "Fair launch — everyone trolls together",
-  "93.1% LP burned — liquidity removed forever",
+  `${LP_BURNED} LP burned — liquidity removed forever`,
   "Community owned — no team tokens",
   "0% tax — buy and sell freely",
 ];

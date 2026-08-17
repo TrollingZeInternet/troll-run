@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   description:
     "TrollERC20 ($TROLL) is the memecoin carrying the legacy of the most iconic meme in history. Join the troll army on Ethereum.",
   keywords: ["TROLL", "TrollERC20", "memecoin", "Ethereum", "ERC-20", "trollface", "crypto", "troll.run"],
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
+  },
   openGraph: {
     title: "TrollERC20 | troll.run",
     description: "The memecoin for internet culture. Pure troll energy on Ethereum.",
