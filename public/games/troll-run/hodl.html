@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TROLL HODL | $TROLL Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      height: 100dvh;
+    }
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      height: 100dvh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+    }
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      height: 100%;
+      height: 100dvh;
+      max-height: 900px;
+      background: #07070c;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0,255,100,0.12);
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+    #ui {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      pointer-events: none;
+      padding: 14px 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 5;
+    }
+    #ui .label { opacity: 0.65; font-size: 11px; letter-spacing: 0.5px; }
+    #priceNow {
+      font-size: 28px;
+      font-weight: 900;
+      color: #00ff88;
+      text-shadow: 0 0 16px rgba(0,255,136,0.55);
+      line-height: 1.1;
+    }
+    #highScore { color: #00ff88; font-weight: 700; font-size: 17px; text-align: right; }
+    #hint {
+      position: absolute;
+      bottom: calc(178px + env(safe-area-inset-bottom, 0px));
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.6px;
+      color: rgba(255,255,255,0.32);
+      pointer-events: none;
+      text-transform: uppercase;
+      transition: opacity 0.6s;
+    }
+    #menu, #gameOver, #howTo {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.88);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 10;
+    }
+    .menu-logo {
+      width: 148px;
+      height: auto;
+      display: block;
+      margin: 0 auto 16px;
+      object-fit: contain;
+      background: transparent;
+    }
+    #coinHud {
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #00ff88;
+      text-shadow: 0 1px 4px #000;
+    }
+    .pad {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      position: absolute;
+      bottom: calc(46px + env(safe-area-inset-bottom, 0px));
+      width: 118px;
+      height: 118px;
+      border-radius: 22px;
+      border: 3px solid #00ff88;
+      color: #00ff88;
+      font-size: 44px;
+      font-weight: 900;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      z-index: 25;
+      user-select: none;
+      -webkit-user-select: none;
+      background: rgba(0, 18, 12, 0.82);
+      pointer-events: auto;
+      touch-action: none;
+      box-shadow: 0 0 22px rgba(0,255,136,0.28);
+      line-height: 1;
+    }
+    .pad small {
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      font-weight: 800;
+    }
+    #padL { left: 12px; }
+    #padR { right: 12px; }
+    #padJump {
+      left: 50%;
+      margin-left: -50px;
+      width: 100px;
+      height: 100px;
+      font-size: 34px;
+      bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+    }
+    #gameContainer.is-playing .pad { display: flex; }
+    .pad.active {
+      background: #00ff88;
+      color: #000;
+      box-shadow: 0 0 26px rgba(0,255,136,0.55);
+    }
+    #menu h1 {
+      font-size: 40px;
+      color: #00ff88;
+      text-shadow: 0 0 24px #00ff88;
+      margin-bottom: 6px;
+      letter-spacing: -1px;
+    }
+    .subtitle { font-size: 16px; color: #999; margin-bottom: 28px; }
+    .btn {
+      background: #00ff88;
+      color: #000;
+      border: none;
+      padding: 14px 42px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 8px;
+      box-shadow: 0 4px 18px rgba(0,255,136,0.35);
+      transition: transform 0.1s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn.secondary {
+      background: transparent;
+      color: #00ff88;
+      border: 2px solid #00ff88;
+      box-shadow: none;
+    }
+    #gameOver h2 { font-size: 34px; color: #ff3366; margin-bottom: 6px; }
+    #finalPrice {
+      font-size: 46px;
+      color: #00ff88;
+      margin: 14px 0;
+      font-weight: 900;
+    }
+    .troll-text {
+      font-size: 14px;
+      color: #ffaa00;
+      margin: 10px 0;
+      max-width: 280px;
+      line-height: 1.4;
+    }
+    .token-info {
+      position: absolute;
+      bottom: 12px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 10px;
+      color: #444;
+    }
+    .token-info a { color: #00ff88; text-decoration: none; }
+    #trollMsg {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ff3366;
+      color: #fff;
+      padding: 16px 26px;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 800;
+      display: none;
+      z-index: 30;
+      text-align: center;
+      box-shadow: 0 0 36px #ff3366;
+      pointer-events: none;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+      <div>
+        <div class="label">PRICE</div>
+        <div id="priceNow">$69</div>
+        <div id="coinHud">0 coins</div>
+      </div>
+      <div>
+        <div class="label" style="text-align:right">ATH</div>
+        <div id="highScore">$69</div>
+      </div>
+    </div>
+    <div id="hint">◀ WHEELIE &nbsp;·&nbsp; JUMP &nbsp;·&nbsp; ENDO ▶</div>
+    <button type="button" id="padL" class="pad" aria-label="Wheelie">◀<small>WHEELIE</small></button>
+    <button type="button" id="padJump" class="pad" aria-label="Jump">▲<small>JUMP</small></button>
+    <button type="button" id="padR" class="pad" aria-label="Endo">▶<small>ENDO</small></button>
+
+    <div id="menu">
+      <img src="Trollface.png" alt="Trollface" class="menu-logo">
+      <h1>TROLL HODL</h1>
+      <div class="subtitle">Don't sell. 😈</div>
+      <button class="btn" id="playBtn">PLAY</button>
+      <button class="btn secondary" id="howBtn">HOW TO PLAY</button>
+      <a class="btn secondary" href="index.html">ALL GAMES</a>
+      <div class="token-info">
+        $TROLL on Ethereum<br>
+        <a href="https://troll.run" target="_blank">troll.run</a> · CA: 0xf8eb…eB3A
+      </div>
+    </div>
+
+    <div id="howTo" style="display:none">
+      <h3 style="color:#00ff88;margin-bottom:16px;font-size:22px">HOW TO PLAY</h3>
+      <p style="color:#ccc;margin:8px 0;font-size:14px;max-width:300px;line-height:1.55">
+        Ride the $TROLL chart. Don't flip. Don't sell.<br><br>
+        <b style="color:#00ff88">◀ / A</b> front wheel up (wheelie)<br>
+        <b style="color:#00ff88">▶ / D</b> rear wheel up (endo)<br>
+        <b style="color:#00ff88">JUMP / SPACE</b> jump<br><br>
+        Collect green Trollcoins — they boost your score a lot.<br>
+        Grab a rocket for <b style="color:#ffcc33">TURBO</b> (2× speed, 5s).<br>
+        Crash = you sold the bottom.
+      </p>
+      <button class="btn" id="closeHow" style="margin-top:20px">GOT IT</button>
+    </div>
+
+    <div id="gameOver" style="display:none">
+      <h2>SOLD!</h2>
+      <div class="troll-text" id="trollQuote">Paper hands detected</div>
+      <div id="finalPrice">$69</div>
+      <button class="btn" id="restartBtn">HODL AGAIN</button>
+      <button class="btn secondary" id="menuBtn">MENU</button>
+      <a class="btn secondary" href="index.html">ALL GAMES</a>
+    </div>
+
+    <div id="trollMsg">HODL!</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const priceEl = document.getElementById('priceNow');
+    const highScoreEl = document.getElementById('highScore');
+    const finalPriceEl = document.getElementById('finalPrice');
+    const menu = document.getElementById('menu');
+    const gameOverScreen = document.getElementById('gameOver');
+    const howTo = document.getElementById('howTo');
+    const trollMsg = document.getElementById('trollMsg');
+    const trollQuote = document.getElementById('trollQuote');
+    const hint = document.getElementById('hint');
+
+    const trollImg = new Image();
+    trollImg.src = 'Trollface.png';
+    const coinImg = new Image();
+    coinImg.src = 'trollcoin.png';
+    const coinHud = document.getElementById('coinHud');
+    const padL = document.getElementById('padL');
+    const padR = document.getElementById('padR');
+    const padJump = document.getElementById('padJump');
+
+    let W = 400, H = 700, scale = 1;
+    function resize() {
+      const box = document.getElementById('gameContainer');
+      W = box.clientWidth;
+      H = box.clientHeight;
+      canvas.width = W;
+      canvas.height = H;
+      scale = Math.min(W / 420, H / 700);
+    }
+    window.addEventListener('resize', resize);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+    resize();
+
+    const WHEEL_R = 13;
+    const WHEEL_HALF = 26;
+    const SPEED_START = 210;
+    const SPEED_CAP = 390;
+    const GRAVITY = 1650;
+    const JUMP_V = -560;
+
+    let state = 'menu';
+    let playTime = 0;
+    let invuln = 0;
+    let crashTimer = 0;
+
+    const bike = {
+      x: 80, y: 0, vy: 0, rot: 0, rotV: 0,
+      speed: SPEED_START, grounded: true, lean: 0
+    };
+    const cam = { x: 0, y: 0 };
+    let particles = [];
+    let props = [];
+    let propsUntil = 0;
+    let coins = [];
+    let coinsUntil = 0;
+    let coinBonus = 0;
+    let coinsGrabbed = 0;
+    let floaters = [];
+    let turboTimer = 0;
+    const TURBO_DURATION = 5;
+    const TURBO_MULT = 2;
+    let idleTime = 0;
+    let jumpQueued = false;
+    let padLean = 0;
+    let touchLean = 0;
+    const keys = {};
+
+    const quotes = [
+      "Paper hands detected",
+      "You sold the bottom",
+      "NGMI",
+      "Should've HODL'd",
+      "Imagine selling",
+      "The dip dipped you",
+      "You were the exit liquidity",
+      "Stop loss triggered 😈",
+      "Diamond hands? More like glass",
+      "This is why you're poor",
+      "Wick to the face",
+      "Bought the top, crashed harder"
+    ];
+
+    function getBest() {
+      try { return parseFloat(localStorage.getItem('trollHodlBest') || '69'); } catch (e) { return 69; }
+    }
+    function setBest(val) {
+      try { localStorage.setItem('trollHodlBest', String(val)); } catch (e) {}
+    }
+    let bestPrice = getBest();
+    highScoreEl.textContent = formatPrice(bestPrice);
+
+    function hash(n) {
+      const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+      return s - Math.floor(s);
+    }
+
+    function groundY(x) {
+      let y = 0;
+      y += Math.sin(x * 0.0095) * 68;
+      y += Math.sin(x * 0.021 + 2.1) * 38;
+      y += Math.sin(x * 0.046 + 0.7) * 16;
+      y += Math.sin(x * 0.0032 + 1.2) * 46;
+      y -= x * 0.035;
+
+      if (x > 420) {
+        const w = 540;
+        const i = Math.floor(x / w);
+        const f = (x - i * w) / w;
+        const h = hash(i);
+        if (h > 0.74) {
+          y += Math.sin(f * Math.PI) * (85 + hash(i + 1) * 70);
+        } else if (h > 0.54) {
+          y -= Math.sin(f * Math.PI) * (65 + hash(i + 2) * 65);
+        } else if (h > 0.40) {
+          const k = Math.max(0, Math.min(1, (f - 0.48) / 0.22));
+          y += (k * k) * (95 + hash(i + 3) * 55);
+        } else if (h > 0.28) {
+          const k = Math.max(0, Math.min(1, (f - 0.38) / 0.2));
+          y -= (k * k) * (80 + hash(i + 4) * 50);
+        }
+      }
+      return y;
+    }
+
+    function slopeAt(x) {
+      const d = 6;
+      return (groundY(x + d) - groundY(x - d)) / (2 * d);
+    }
+
+    // Early climb stays near the old feel; past ~$500 each extra dollar
+    // is worth less, so high prices take much longer.
+    function scoreRaw(x, bonus) {
+      return 69 + Math.max(0, x) * 0.145 + (bonus || 0);
+    }
+
+    function scoreFromRaw(raw) {
+      if (raw <= 500) return raw;
+      const extra = raw - 500;
+      const r = 0.55;
+      const soften = 400;
+      return 500 - soften + Math.sqrt(soften * soften + 2 * soften * r * extra);
+    }
+
+    function currentPrice(x) {
+      return scoreFromRaw(scoreRaw(x, 0));
+    }
+
+    function totalScore() {
+      return scoreFromRaw(scoreRaw(bike.x, coinBonus));
+    }
+
+    function coinValueAt(x) {
+      return Math.round(420 + currentPrice(x) * 0.45);
+    }
+
+    function formatPrice(n) {
+      if (n >= 1e12) return '$' + trimNum(n / 1e12) + 'T';
+      if (n >= 1e9) return '$' + trimNum(n / 1e9) + 'B';
+      if (n >= 1e6) return '$' + trimNum(n / 1e6) + 'M';
+      if (n >= 1000) return '$' + trimNum(n / 1000) + 'k';
+      return '$' + Math.round(n);
+    }
+    function trimNum(n) {
+      const d = n >= 100 ? 0 : 1;
+      return n.toFixed(d).replace(/\.0$/, '');
+    }
+
+    function normAngle(a) {
+      while (a > Math.PI) a -= Math.PI * 2;
+      while (a < -Math.PI) a += Math.PI * 2;
+      return a;
+    }
+
+    function wobble(id, t) {
+      return Math.sin(t * 7.2 + id * 12.3) * 0.9 + Math.sin(t * 13.1 + id * 4.2) * 0.4;
+    }
+
+    function ensureProps(maxX) {
+      const labels = ['HODL!', 'if u hold...', 'TO THE MOON!!', 'WAGMI', "don't sell", 'this is the dip', 'BUY THE DIP', '💎🙌', 'never sell'];
+      while (propsUntil < maxX) {
+        const x = propsUntil + 160 + hash(propsUntil) * 180;
+        propsUntil = x + 40;
+        if (x < 280) continue;
+        const gy = groundY(x);
+        const r = hash(x + 9);
+        if (r < 0.28) {
+          props.push({ type: 'text', text: formatPrice(currentPrice(x)), x, y: gy - 42, color: '#00ff88' });
+        } else if (r < 0.62) {
+          const text = labels[Math.floor(hash(x + 3) * labels.length)];
+          const color = text === 'TO THE MOON!!' || text === 'HODL!' ? '#00ff88' : '#ffcc66';
+          props.push({ type: 'text', text, x, y: gy - 40, color });
+        } else if (r < 0.68) {
+          props.push({ type: 'rocket', x, y: gy - 56, got: false });
+        } else {
+          props.push({ type: 'arrow', x, y: gy - 36 });
+        }
+      }
+      props = props.filter(p => !p.got && p.x > cam.x - 80);
+    }
+
+    function ensureCoins(maxX) {
+      while (coinsUntil < maxX) {
+        const x = coinsUntil + 170 + hash(coinsUntil + 11) * 200;
+        coinsUntil = x + 16;
+        if (x < 320) continue;
+        if (hash(x + 77) > 0.42) continue;
+        const n = hash(x + 2) > 0.72 ? 3 : hash(x + 2) > 0.4 ? 2 : 1;
+        for (let i = 0; i < n; i++) {
+          const gx = x + i * 38;
+          const gy = groundY(gx);
+          const air = hash(gx + 5) > 0.5 ? 62 + hash(gx) * 48 : 34;
+          coins.push({ x: gx, y: gy - air, r: 18, got: false, pulse: hash(gx) * 6 });
+        }
+      }
+      coins = coins.filter(c => !c.got && c.x > cam.x - 70);
+    }
+
+    function addDust(x, y, n) {
+      for (let i = 0; i < n; i++) {
+        particles.push({
+          x, y,
+          vx: -40 - Math.random() * 70,
+          vy: -20 + Math.random() * 30,
+          life: 18 + Math.random() * 16,
+          size: 1.5 + Math.random() * 2.5,
+          color: Math.random() > 0.5 ? '#00ff88' : '#ccc'
+        });
+      }
+    }
+
+    function startGame() {
+      menu.style.display = 'none';
+      gameOverScreen.style.display = 'none';
+      howTo.style.display = 'none';
+      state = 'play';
+      playTime = 0;
+      invuln = 1.15;
+      crashTimer = 0;
+      bike.x = 80;
+      bike.vy = 0;
+      bike.rot = 0;
+      bike.rotV = 0;
+      bike.speed = SPEED_START;
+      bike.grounded = true;
+      bike.lean = 0;
+      const ang = Math.atan(slopeAt(bike.x));
+      bike.y = groundY(bike.x) - Math.cos(ang) * WHEEL_R;
+      cam.x = bike.x - W * 0.3;
+      cam.y = bike.y - H * 0.58;
+      particles = [];
+      props = [];
+      propsUntil = 0;
+      coins = [];
+      coinsUntil = 0;
+      coinBonus = 0;
+      coinsGrabbed = 0;
+      floaters = [];
+      turboTimer = 0;
+      idleTime = 0;
+      jumpQueued = false;
+      padLean = 0;
+      touchLean = 0;
+      priceEl.textContent = '$69';
+      coinHud.textContent = '0 coins';
+      hint.style.opacity = '1';
+      document.getElementById('gameContainer').classList.add('is-playing');
+    }
+
+    function crash() {
+      if (state !== 'play' || invuln > 0) return;
+      state = 'crash';
+      crashTimer = 0.95;
+      bike.rotV = (Math.random() > 0.5 ? 1 : -1) * (4 + Math.random() * 5);
+      bike.vy = -220;
+      bike.grounded = false;
+      addDust(bike.x, bike.y, 18);
+      showTrollMsg(quotes[Math.floor(Math.random() * quotes.length)]);
+    }
+
+    function finishCrash() {
+      state = 'gameover';
+      const p = totalScore();
+      if (p > bestPrice) {
+        bestPrice = p;
+        setBest(p);
+        highScoreEl.textContent = formatPrice(bestPrice);
+      }
+      finalPriceEl.textContent = formatPrice(p);
+      trollQuote.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+      gameOverScreen.style.display = 'flex';
+      document.getElementById('gameContainer').classList.remove('is-playing');
+    }
+
+    function showTrollMsg(text) {
+      trollMsg.innerHTML = text;
+      trollMsg.style.display = 'block';
+      setTimeout(() => { trollMsg.style.display = 'none'; }, 1600);
+    }
+
+    document.getElementById('playBtn').onclick = startGame;
+    document.getElementById('restartBtn').onclick = startGame;
+    document.getElementById('menuBtn').onclick = () => {
+      gameOverScreen.style.display = 'none';
+      menu.style.display = 'flex';
+      state = 'menu';
+      document.getElementById('gameContainer').classList.remove('is-playing');
+    };
+    document.getElementById('howBtn').onclick = () => { howTo.style.display = 'flex'; };
+    document.getElementById('closeHow').onclick = () => { howTo.style.display = 'none'; };
+
+    window.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        jumpQueued = true;
+      }
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'KeyA' || e.code === 'KeyD') {
+        e.preventDefault();
+      }
+    });
+    window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    function pointerPos(e) {
+      const t = e.touches ? e.touches[0] : e;
+      if (!t) return null;
+      const r = canvas.getBoundingClientRect();
+      return { x: (t.clientX - r.left) / r.width, y: (t.clientY - r.top) / r.height };
+    }
+    function applyCanvasSteer(e, down) {
+      if (!down) { touchLean = 0; return; }
+      const p = pointerPos(e);
+      if (!p) return;
+      if (p.x < 0.30) touchLean = -1;
+      else if (p.x > 0.70) touchLean = 1;
+      else {
+        touchLean = 0;
+        jumpQueued = true;
+      }
+    }
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); if (state === 'play') applyCanvasSteer(e, true); }, { passive: false });
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); if (state === 'play') applyCanvasSteer(e, true); }, { passive: false });
+    canvas.addEventListener('touchend', e => { e.preventDefault(); touchLean = 0; }, { passive: false });
+    canvas.addEventListener('mousedown', e => { if (state === 'play') applyCanvasSteer(e, true); });
+    canvas.addEventListener('mousemove', e => { if (state === 'play' && e.buttons === 1) applyCanvasSteer(e, true); });
+    canvas.addEventListener('mouseup', () => { touchLean = 0; });
+
+    function bindPad(el, dir) {
+      const on = ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        padLean = dir;
+        el.classList.add('active');
+        if (ev.pointerId != null && el.setPointerCapture) {
+          try { el.setPointerCapture(ev.pointerId); } catch (err) {}
+        }
+      };
+      const off = ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (padLean === dir) padLean = 0;
+        el.classList.remove('active');
+      };
+      el.addEventListener('pointerdown', on);
+      el.addEventListener('pointerup', off);
+      el.addEventListener('pointercancel', off);
+      el.addEventListener('lostpointercapture', off);
+      el.addEventListener('touchstart', on, { passive: false });
+      el.addEventListener('touchend', off, { passive: false });
+      el.addEventListener('touchcancel', off, { passive: false });
+    }
+    bindPad(padL, -1);
+    bindPad(padR, 1);
+
+    function bindJump(el) {
+      const on = ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        jumpQueued = true;
+        el.classList.add('active');
+        if (ev.pointerId != null && el.setPointerCapture) {
+          try { el.setPointerCapture(ev.pointerId); } catch (err) {}
+        }
+      };
+      const off = ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        el.classList.remove('active');
+      };
+      el.addEventListener('pointerdown', on);
+      el.addEventListener('pointerup', off);
+      el.addEventListener('pointercancel', off);
+      el.addEventListener('lostpointercapture', off);
+      el.addEventListener('touchstart', on, { passive: false });
+      el.addEventListener('touchend', off, { passive: false });
+      el.addEventListener('touchcancel', off, { passive: false });
+    }
+    bindJump(padJump);
+
+    function wheelBottom(side) {
+      const lx = side * WHEEL_HALF;
+      return {
+        x: bike.x + Math.cos(bike.rot) * lx - Math.sin(bike.rot) * WHEEL_R,
+        y: bike.y + Math.sin(bike.rot) * lx + Math.cos(bike.rot) * WHEEL_R
+      };
+    }
+
+    function riderHeadPlanted() {
+      const lx = -2, ly = -47;
+      const hx = bike.x + Math.cos(bike.rot) * lx - Math.sin(bike.rot) * ly;
+      const hy = bike.y + Math.sin(bike.rot) * lx + Math.cos(bike.rot) * ly;
+      return hy > groundY(hx) + 6;
+    }
+
+    function update(dt) {
+      if (state === 'menu' || state === 'gameover') return;
+
+      playTime += dt;
+      if (invuln > 0) invuln -= dt;
+      if (playTime > 5) hint.style.opacity = '0.18';
+
+      const keyLean = (keys['ArrowLeft'] || keys['KeyA'] ? -1 : 0) + (keys['ArrowRight'] || keys['KeyD'] ? 1 : 0);
+      const steer = padLean || keyLean || touchLean;
+      const jumping = jumpQueued || keys['Space'] || keys['ArrowUp'] || keys['KeyW'];
+      if (steer !== 0 || jumping) idleTime = 0;
+      else idleTime += dt;
+      bike.lean += (steer - bike.lean) * Math.min(1, dt * 14);
+      padL.classList.toggle('active', steer < 0);
+      padR.classList.toggle('active', steer > 0);
+
+      if (state === 'crash') {
+        crashTimer -= dt;
+        bike.x += bike.speed * 0.55 * dt;
+        bike.vy += GRAVITY * dt;
+        bike.y += bike.vy * dt;
+        bike.rot += bike.rotV * dt;
+        if (crashTimer <= 0) finishCrash();
+        updateParticles(dt);
+        updateFloaters(dt);
+        return;
+      }
+
+      bike.speed = Math.min(SPEED_CAP, bike.speed + 7.5 * dt);
+      if (turboTimer > 0) turboTimer = Math.max(0, turboTimer - dt);
+      const grade = Math.atan(slopeAt(bike.x));
+      const moveSpeed = bike.speed * (turboTimer > 0 ? TURBO_MULT : 1);
+      bike.x += moveSpeed * (1 + Math.sin(grade) * 0.14) * dt;
+
+      if (bike.grounded && jumpQueued) {
+        bike.grounded = false;
+        bike.vy = JUMP_V;
+        bike.rotV += bike.lean * 2.2;
+        addDust(bike.x, bike.y + WHEEL_R, 6);
+      }
+      jumpQueued = false;
+
+      // Left = front wheel up (CCW). Right = rear wheel up (CW).
+      const steerT = bike.grounded ? 16.5 : 12;
+      bike.rotV += bike.lean * steerT * dt;
+
+      const slope = Math.atan(slopeAt(bike.x));
+      const tilt = normAngle(bike.rot - slope);
+
+      const wobble = Math.sin(playTime * 5.6) * 0.22 + Math.sin(playTime * 9.8 + 1.1) * 0.1;
+      const idle = Math.min(idleTime, 18);
+      const wobbleAmp = 0.32 + idle * 0.12;
+      bike.rotV += wobble * wobbleAmp * dt;
+      if (Math.random() < dt * (0.18 + idle * 0.1)) {
+        bike.rotV += (Math.random() - 0.5) * (0.35 + idle * 0.12);
+      }
+
+      if (bike.grounded) {
+        // Unstable: lean grows unless the player counters. No self-balance.
+        const drift = 1.35 + idle * 0.22;
+        bike.rotV += tilt * drift * dt;
+        bike.rotV *= Math.pow(0.78, dt);
+      } else {
+        bike.vy += GRAVITY * dt;
+        bike.y += bike.vy * dt;
+        bike.rotV *= Math.pow(0.62, dt);
+      }
+
+      bike.rot += bike.rotV * dt;
+
+      const rearB = wheelBottom(-1);
+      const frontB = wheelBottom(1);
+      const rearPen = rearB.y - groundY(rearB.x);
+      const frontPen = frontB.y - groundY(frontB.x);
+      const maxPen = Math.max(rearPen, frontPen);
+      const wasAir = !bike.grounded;
+
+      if (maxPen > 0) {
+        bike.y -= maxPen;
+        if (bike.vy > 0) bike.vy = 0;
+        if (wasAir) {
+          if (invuln <= 0 && riderHeadPlanted()) {
+            crash();
+          } else {
+            bike.grounded = true;
+            bike.rotV *= 0.55;
+            addDust(bike.x, groundY(bike.x), 8);
+          }
+        } else {
+          bike.grounded = true;
+        }
+      } else if (maxPen < -18) {
+        bike.grounded = false;
+      } else {
+        bike.grounded = true;
+      }
+
+      if (invuln <= 0 && riderHeadPlanted()) crash();
+
+      if (bike.grounded && Math.random() < (turboTimer > 0 ? 0.7 : 0.3)) {
+        addDust(bike.x - 20, bike.y + WHEEL_R, turboTimer > 0 ? 2 : 1);
+      }
+
+      collectCoins();
+      collectRockets();
+
+      const p = totalScore();
+      priceEl.textContent = formatPrice(p);
+      coinHud.textContent = coinsGrabbed + (coinsGrabbed === 1 ? ' coin' : ' coins');
+
+      cam.x += (bike.x - W * 0.30 - cam.x) * Math.min(1, dt * 6);
+      cam.y += (bike.y - H * 0.58 - cam.y) * Math.min(1, dt * 4.2);
+
+      ensureProps(cam.x + W + 240);
+      ensureCoins(cam.x + W + 240);
+      updateParticles(dt);
+      updateFloaters(dt);
+
+      if (state === 'play' && playTime > 8 && Math.random() < dt * 0.04) {
+        const bits = ['HODL...', "don't sell", 'this is fine', 'TO THE MOON'];
+        showTrollMsg(bits[Math.floor(Math.random() * bits.length)]);
+      }
+    }
+
+    function collectRockets() {
+      for (let i = 0; i < props.length; i++) {
+        const p = props[i];
+        if (p.type !== 'rocket' || p.got) continue;
+        const rx = p.x;
+        const ry = groundY(p.x) - 56;
+        const dx = rx - bike.x;
+        const dy = ry - bike.y;
+        if (dx * dx + dy * dy < 52 * 52) {
+          p.got = true;
+          turboTimer = TURBO_DURATION;
+          showTrollMsg('TURBO!');
+          addDust(rx, ry, 16);
+        }
+      }
+    }
+
+    function collectCoins() {
+      for (let i = 0; i < coins.length; i++) {
+        const c = coins[i];
+        if (c.got) continue;
+        const dx = c.x - bike.x;
+        const dy = c.y - bike.y;
+        if (dx * dx + dy * dy < 44 * 44) {
+          c.got = true;
+          const before = totalScore();
+          coinBonus += coinValueAt(bike.x);
+          coinsGrabbed++;
+          const gain = Math.max(0, totalScore() - before);
+          floaters.push({ x: c.x, y: c.y, text: '+' + formatPrice(gain), life: 1 });
+          addDust(c.x, c.y, 12);
+        }
+      }
+    }
+
+    function updateFloaters(dt) {
+      for (let i = floaters.length - 1; i >= 0; i--) {
+        const f = floaters[i];
+        f.y -= 38 * dt;
+        f.life -= dt;
+        if (f.life <= 0) floaters.splice(i, 1);
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 80 * dt;
+        p.life -= dt * 60;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      if (particles.length > 80) particles.splice(0, particles.length - 80);
+    }
+
+    function sx(x) { return x - cam.x; }
+    function sy(y) { return y - cam.y; }
+
+    function sketchLine(x1, y1, x2, y2, id, t) {
+      const mx = (x1 + x2) / 2 + wobble(id, t);
+      const my = (y1 + y2) / 2 + wobble(id + 1, t);
+      ctx.beginPath();
+      ctx.moveTo(x1 + wobble(id + 2, t) * 0.4, y1 + wobble(id + 3, t) * 0.4);
+      ctx.quadraticCurveTo(mx, my, x2 + wobble(id + 4, t) * 0.4, y2 + wobble(id + 5, t) * 0.4);
+      ctx.stroke();
+    }
+
+    function drawTrollHead(x, y, r) {
+      if (trollImg.complete && trollImg.naturalWidth) {
+        ctx.drawImage(trollImg, x - r, y - r, r * 2, r * 2);
+      }
+    }
+
+    function drawBike(t) {
+      const x = sx(bike.x);
+      const y = sy(bike.y);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(bike.rot);
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      function wheel(lx, ly, r) {
+        ctx.save();
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(lx, ly, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = '#f2f2f2';
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(lx - r * 0.55, ly);
+        ctx.lineTo(lx + r * 0.55, ly);
+        ctx.moveTo(lx, ly - r * 0.55);
+        ctx.lineTo(lx, ly + r * 0.55);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      wheel(-WHEEL_HALF, 0, WHEEL_R);
+      wheel(WHEEL_HALF, 0, WHEEL_R);
+
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 5.2;
+      sketchLine(-20, 0, 6, -10, 1, t);
+      sketchLine(6, -10, 22, 0, 2, t);
+      sketchLine(-18, 2, 20, 2, 3, t);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2.3;
+      sketchLine(-20, 0, 6, -10, 1, t);
+      sketchLine(6, -10, 22, 0, 2, t);
+      sketchLine(-18, 2, 20, 2, 3, t);
+      sketchLine(-16, -8, -2, -7, 4, t);
+      sketchLine(16, -8, 26, -12, 5, t);
+      sketchLine(24, -16, 28, -6, 6, t);
+
+      const hipX = -7, hipY = -6;
+      const shX = -3, shY = -30;
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 5;
+      sketchLine(hipX, hipY, shX, shY, 10, t);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2.2;
+      sketchLine(hipX, hipY, shX, shY, 10, t);
+      sketchLine(hipX, hipY, -20, 6, 11, t);
+      sketchLine(hipX, hipY, 8, 8, 12, t);
+      sketchLine(shX, shY, 24, -12, 13, t);
+      sketchLine(shX, shY, 18, -8, 14, t);
+
+      drawTrollHead(shX + 1, shY - 17, 16);
+      ctx.restore();
+    }
+
+    function drawRocket(x, y, t) {
+      ctx.save();
+      ctx.translate(sx(x), sy(y) + Math.sin(t * 3) * 4);
+      ctx.fillStyle = 'rgba(255,170,40,0.28)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 22 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.rotate(-0.7);
+      ctx.fillStyle = '#f4f4f4';
+      ctx.beginPath();
+      ctx.moveTo(0, -18 * scale);
+      ctx.lineTo(6 * scale, 8 * scale);
+      ctx.lineTo(-6 * scale, 8 * scale);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1.5 * scale;
+      ctx.stroke();
+      ctx.fillStyle = '#ff4466';
+      ctx.beginPath();
+      ctx.moveTo(-6 * scale, 4 * scale);
+      ctx.lineTo(-12 * scale, 12 * scale);
+      ctx.lineTo(-4 * scale, 8 * scale);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(6 * scale, 4 * scale);
+      ctx.lineTo(12 * scale, 12 * scale);
+      ctx.lineTo(4 * scale, 8 * scale);
+      ctx.fill();
+      ctx.fillStyle = '#ffaa00';
+      ctx.beginPath();
+      ctx.moveTo(-3 * scale, 8 * scale);
+      ctx.lineTo(0, (16 + Math.sin(t * 22) * 5) * scale);
+      ctx.lineTo(3 * scale, 8 * scale);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBackground(t) {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#0c1420');
+      g.addColorStop(0.55, '#090910');
+      g.addColorStop(1, '#050508');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      const moonX = W * 0.82;
+      const moonY = H * 0.16;
+      ctx.fillStyle = 'rgba(255,255,230,0.08)';
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, 36 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,220,0.28)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,220,0.06)';
+      ctx.beginPath();
+      ctx.arc(moonX - 8, moonY - 4, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(0,255,136,0.22)';
+      ctx.font = 'bold ' + Math.floor(11 * scale) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('MOON', moonX, moonY + 52 * scale);
+
+      ctx.strokeStyle = 'rgba(0,255,136,0.045)';
+      ctx.lineWidth = 1;
+      const grid = 46 * scale;
+      const ox = -((cam.x) % grid);
+      const oy = -((cam.y) % grid);
+      for (let x = ox; x < W; x += grid) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = oy; y < H; y += grid) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+    }
+
+    function drawChart() {
+      const step = 6;
+      const x0 = cam.x - 20;
+      const x1 = cam.x + W + 20;
+      ctx.beginPath();
+      let first = true;
+      let fx = x0, fy = 0;
+      for (let x = x0; x <= x1; x += step) {
+        const y = groundY(x);
+        const px = sx(x), py = sy(y);
+        if (first) { ctx.moveTo(px, py); fx = px; fy = py; first = false; }
+        else ctx.lineTo(px, py);
+      }
+      const lastX = sx(x1);
+      ctx.lineTo(lastX, H + 20);
+      ctx.lineTo(fx, H + 20);
+      ctx.closePath();
+      const fill = ctx.createLinearGradient(0, 0, 0, H);
+      fill.addColorStop(0, 'rgba(0,255,136,0.10)');
+      fill.addColorStop(1, 'rgba(0,0,0,0.55)');
+      ctx.fillStyle = fill;
+      ctx.fill();
+
+      ctx.beginPath();
+      first = true;
+      for (let x = x0; x <= x1; x += step) {
+        const px = sx(x), py = sy(groundY(x));
+        if (first) { ctx.moveTo(px, py); first = false; }
+        else ctx.lineTo(px, py);
+      }
+      ctx.shadowColor = '#00ff88';
+      ctx.shadowBlur = 14;
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 3.4 * scale;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#eaffea';
+      ctx.lineWidth = 1.3 * scale;
+      ctx.stroke();
+    }
+
+    function drawProps(t) {
+      props.forEach(p => {
+        if (p.x < cam.x - 40 || p.x > cam.x + W + 40) return;
+        if (p.type === 'text') {
+          ctx.save();
+          ctx.fillStyle = p.color;
+          ctx.font = 'bold ' + Math.floor(15 * scale) + 'px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(0,0,0,0.8)';
+          ctx.shadowBlur = 6;
+          ctx.fillText(p.text, sx(p.x), sy(groundY(p.x) - 38));
+          ctx.restore();
+        } else if (p.type === 'rocket' && !p.got) {
+          drawRocket(p.x, groundY(p.x) - 56, t);
+        } else if (p.type === 'arrow') {
+          const x = sx(p.x), y = sy(groundY(p.x) - 34);
+          ctx.save();
+          ctx.strokeStyle = '#00ff88';
+          ctx.fillStyle = '#00ff88';
+          ctx.lineWidth = 2.4 * scale;
+          ctx.beginPath();
+          ctx.moveTo(x, y + 16 * scale);
+          ctx.lineTo(x, y - 8 * scale);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x, y - 16 * scale);
+          ctx.lineTo(x + 7 * scale, y - 4 * scale);
+          ctx.lineTo(x - 7 * scale, y - 4 * scale);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life / 30);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(sx(p.x), sy(p.y), p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function drawCoins(t) {
+      coins.forEach(c => {
+        if (c.got) return;
+        const pulse = 1 + Math.sin(t * 5 + c.pulse) * 0.1;
+        const r = c.r * pulse;
+        const x = sx(c.x);
+        const y = sy(c.y + Math.sin(t * 3 + c.pulse) * 4);
+        ctx.save();
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 16;
+        if (coinImg.complete && coinImg.naturalWidth) {
+          ctx.drawImage(coinImg, x - r, y - r, r * 2, r * 2);
+        } else {
+          ctx.fillStyle = '#00cc66';
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#00ff88';
+          ctx.beginPath();
+          ctx.arc(x, y, r * 0.72, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#003322';
+          ctx.font = 'bold ' + Math.floor(r * 0.7) + 'px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$T', x, y + 1);
+        }
+        ctx.restore();
+      });
+    }
+
+    function drawFloaters() {
+      floaters.forEach(f => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, f.life);
+        ctx.fillStyle = '#00ff88';
+        ctx.font = 'bold ' + Math.floor(16 * scale) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 6;
+        ctx.fillText(f.text, sx(f.x), sy(f.y));
+        ctx.restore();
+      });
+    }
+
+    function draw() {
+      const t = performance.now() / 1000;
+      drawBackground(t);
+      if (state === 'menu') {
+        drawChart();
+        return;
+      }
+      drawChart();
+      drawProps(t);
+      drawCoins(t);
+      drawParticles();
+      drawBike(t);
+      drawFloaters();
+      drawTurbo(t);
+    }
+
+    function drawTurbo(t) {
+      if (turboTimer <= 0 || state === 'menu' || state === 'gameover') return;
+      const pulse = 0.55 + Math.sin(t * 14) * 0.2;
+      ctx.fillStyle = 'rgba(255,140,20,' + (0.06 + pulse * 0.05) + ')';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.strokeStyle = 'rgba(255,210,80,0.28)';
+      ctx.lineWidth = 2;
+      const scroll = (t * 520) % 46;
+      for (let i = -1; i < 16; i++) {
+        const y = i * 46 + scroll;
+        const len = 36 + (i % 3) * 18;
+        ctx.beginPath();
+        ctx.moveTo(10, y);
+        ctx.lineTo(10 + len, y + 6);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(W - 10, y);
+        ctx.lineTo(W - 10 - len, y + 6);
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffcc33';
+      ctx.font = 'bold ' + Math.floor(30 * scale) + 'px sans-serif';
+      ctx.shadowColor = '#ff8800';
+      ctx.shadowBlur = 12;
+      ctx.fillText('TURBO!', W / 2, 58 * scale);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#00ff88';
+      ctx.font = 'bold ' + Math.floor(14 * scale) + 'px sans-serif';
+      ctx.fillText(turboTimer.toFixed(1) + 's', W / 2, 78 * scale);
+      ctx.restore();
+    }
+
+    let last = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.033, (now - last) / 1000);
+      last = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+    document.body.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+    cam.x = -40;
+    cam.y = groundY(80) - H * 0.62;
+    ensureProps(W + 400);
+  </script>
+</body>
+</html>

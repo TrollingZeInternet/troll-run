@@ -8,6 +8,7 @@ import TrollfaceImage from "./TrollfaceImage";
 
 const navLinks = [
   { href: "/about", label: "About" },
+  { href: "/play", label: "Play" },
   { href: "/bridge", label: "Bridge" },
   { href: "/scanner", label: "Scanner" },
   { href: "/tokenomics", label: "Tokenomics" },
@@ -32,7 +33,7 @@ export default function Header() {
           </span>
         </a>
 
-        <nav className="hidden items-center gap-10 md:flex">
+        <nav className="hidden items-center gap-6 lg:gap-10 md:flex">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (

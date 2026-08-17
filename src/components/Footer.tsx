@@ -15,13 +15,14 @@ function XIcon({ size = 18 }: { size?: number }) {
 }
 
 const socials = [
-  { icon: XIcon, href: "https://x.com", label: "Twitter / X" },
-  { icon: MessageCircle, href: "https://t.me", label: "Telegram" },
+  { icon: XIcon, href: "https://x.com/ERC20Trolls", label: "Twitter / X" },
+  { icon: MessageCircle, href: "https://t.me/ERC20_TROLL", label: "Telegram" },
   { icon: BarChart3, href: ETHERSCAN_URL, label: "Etherscan" },
 ];
 
 const footerLinks = [
   { href: "/about", label: "About" },
+  { href: "/play", label: "Play" },
   { href: "/bridge", label: "Bridge" },
   { href: "/scanner", label: "Scanner" },
   { href: "/tokenomics", label: "Tokenomics" },
