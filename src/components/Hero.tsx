@@ -72,24 +72,38 @@ export default function Hero() {
               on Ethereum.
             </p>
 
-            <div className="animate-fade-up-delay-3 mt-10 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
+            <div className="animate-fade-up-delay-3 mt-10 flex flex-col items-center gap-4 lg:items-start">
+              <div className="flex w-full flex-col items-center gap-4 sm:flex-row lg:justify-start">
+                <a
+                  href="/bridge"
+                  className="btn-primary group flex w-full items-center justify-center gap-2.5 rounded-full px-10 py-4.5 text-base font-bold text-black sm:w-auto"
+                >
+                  Buy TrollERC20
+                  <ArrowRight
+                    size={20}
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </a>
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-ghost flex w-full items-center justify-center rounded-full px-10 py-4.5 text-base font-semibold text-white sm:w-auto"
+                >
+                  Join the Trolls
+                </a>
+              </div>
               <a
-                href="/bridge"
-                className="btn-primary group flex w-full items-center justify-center gap-2.5 rounded-full px-10 py-4.5 text-base font-bold text-black sm:w-auto"
+                href="https://nft.troll.run"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary group flex w-full items-center justify-center gap-2.5 rounded-full px-10 py-4.5 text-base font-bold text-troll-green-light sm:w-auto"
               >
-                Buy TrollERC20
+                Explore NFTs
                 <ArrowRight
                   size={20}
                   className="transition-transform group-hover:translate-x-1"
                 />
-              </a>
-              <a
-                href="https://x.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost flex w-full items-center justify-center rounded-full px-10 py-4.5 text-base font-semibold text-white sm:w-auto"
-              >
-                Join the Trolls
               </a>
             </div>
 
